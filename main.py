@@ -1,9 +1,52 @@
 # server.py
 from mcp.server.fastmcp import FastMCP
-
+import requests
+import dotenv
 
 # Create the MCP server instance
 mcp = FastMCP("Youtrack MCP Server")
+
+# Configuración
+dotenv.load_dotenv()  # Cargar variables de entorno desde .env
+BASE_URL = "https://javilujann.youtrack.cloud/api"
+HEADERS = {
+    "Authorization": f"Bearer {dotenv.get_key('.env', 'YOUTRACK_API_TOKEN')}",
+    "Accept": "application/json"
+}
+
+# 1. Listar tableros
+def get_boards():
+    url = f"{BASE_URL}/agiles?fields=id,name"
+    r = requests.get(url, headers=HEADERS)
+    r.raise_for_status()
+    return r.json()
+
+# 2. Listar sprints de un tablero
+def get_sprints(board_id):
+    url = f"{BASE_URL}/agiles/{board_id}/sprints?fields=id,name"
+    r = requests.get(url, headers=HEADERS)
+    r.raise_for_status()
+    return r.json()
+
+# 3. Obtener issues de un sprint
+def get_issues(board_id, sprint_id):
+    fields = "id,summary,customFields(id,name,value(name))"
+    url = f"{BASE_URL}/agiles/{board_id}/sprints/{sprint_id}/issues?fields={fields}"
+    r = requests.get(url, headers=HEADERS)
+    r.raise_for_status()
+    return r.json()
+
+# 4. Filtrar tareas "En curso"
+def filter_in_progress(issues):
+    result = []
+    for issue in issues:
+        for field in issue.get("customFields", []):
+            if field["name"] == "State" and field.get("value", {}).get("name") != "Fixed":
+                result.append({
+                    "id": issue["id"],
+                    "summary": issue["summary"]
+                })
+    return result
 
 # Timestamp tool
 @mcp.tool()
@@ -19,4 +62,23 @@ def getTasksInformation() -> str:
 
 
 if __name__ == "__main__":
-    mcp.run(transport="stdio")
+    #mcp.run(transport="stdio")
+    boards = get_boards()
+    print("Tableros disponibles:")
+    for b in boards:
+        print(f"{b['id']} - {b['name']}")
+
+    # ⚠️ Aquí pon el ID del tablero y del sprint que quieras consultar
+    board_id = boards[0]["id"]  # el primero como ejemplo
+    sprints = get_sprints(board_id)
+    print("\nSprints:")
+    for s in sprints:
+        print(f"{s['id']} - {s['name']}")
+
+    sprint_id = sprints[0]["id"]  # primer sprint como ejemplo
+    issues = get_issues(board_id, sprint_id)
+    in_progress = filter_in_progress(issues)
+
+    print("\nTareas EN CURSO:")
+    for t in in_progress:
+        print(f"- {t['id']} | {t['summary']}")
