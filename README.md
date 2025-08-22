@@ -25,27 +25,69 @@ youtrack-mcp/
 └── README.md           # Este archivo
 ```
 
-## Configuración
+## Uso
+
+### Como servidor MCP
+
+El servidor se ejecuta automáticamente cuando se configura en un cliente MCP compatible. La configuración se realiza a través del archivo `mcp.json` como se muestra abajo.
+
+### Ejecución directa (desarrollo/testing)
+
+```bash
+# Con variables de entorno del sistema
+export YOUTRACK_BASE_URL="https://tu-instancia.youtrack.cloud/api"
+export YOUTRACK_API_TOKEN="tu-token"
+
+# Ejecutar servidor
+python3 main.py
+
+# Con argumentos personalizados
+python3 main.py --timeout 60 --finished-states "Done,Closed"
+```
+
+### Como servidor MCP
+
+Este servidor se configura a través de un archivo `mcp.json` que especifica las variables de entorno y argumentos del servidor.
+
+**Ejemplo de configuración en `mcp.json`:**
+
+```json
+{
+    "servers": {
+        "youtrack": {
+            "type": "stdio",
+            "command": "/path/to/python",
+            "args": [
+                "main.py",
+                "--timeout",
+                "30",
+                "--finished-states",
+                "Fixed,Verified"
+            ],
+            "env": {
+                "YOUTRACK_API_TOKEN": "tu-token-de-api",
+                "YOUTRACK_BASE_URL": "https://tu-instancia.youtrack.cloud/api"
+            }
+        }
+    },
+    "inputs": []
+}
+```
 
 ### Variables de entorno requeridas
 
-```bash
-export YOUTRACK_BASE_URL="https://tu-instancia.youtrack.cloud"
-export YOUTRACK_API_TOKEN="tu-token-de-api"
-```
+- `YOUTRACK_BASE_URL`: URL de tu instancia de YouTrack (ej: `https://tu-instancia.youtrack.cloud/api`)
+- `YOUTRACK_API_TOKEN`: Token de API de YouTrack
+
+### Argumentos opcionales del servidor
+
+- `--timeout`: Timeout para requests HTTP en segundos (default: 30)
+- `--finished-states`: Estados considerados terminados, separados por comas (default: "Fixed,Verified")
 
 ### Instalación
 
 ```bash
 pip install -r requirements.txt
-```
-
-## Uso
-
-### Como servidor MCP
-
-```bash
-python3 main.py
 ```
 
 ### Herramientas disponibles
@@ -59,12 +101,6 @@ Obtiene información de todas las tareas en progreso de un tablero específico.
 
 **Retorna:**
 - Reporte en formato markdown con las tareas en progreso
-
-**Ejemplo:**
-```python
-# Obtener tareas del tablero "Mi Proyecto"
-resultado = getTasksInformation("Mi Proyecto")
-```
 
 ## Características
 
