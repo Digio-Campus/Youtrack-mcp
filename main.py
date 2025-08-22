@@ -2,6 +2,10 @@
 from mcp.server.fastmcp import FastMCP
 import requests
 import dotenv
+import logging
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("Youtrack MCP")
 
 # Create the MCP server instance
 mcp = FastMCP("Youtrack MCP Server")
@@ -64,21 +68,22 @@ def getTasksInformation() -> str:
 if __name__ == "__main__":
     #mcp.run(transport="stdio")
     boards = get_boards()
-    print("Tableros disponibles:")
+
+    logger.info("Tableros disponibles:")
     for b in boards:
-        print(f"{b['id']} - {b['name']}")
+        logger.info(f"{b['id']} - {b['name']} con sprint: {b['currentSprint']['name'] if b.get('currentSprint') else 'N/A'}")
 
     # ⚠️ Aquí pon el ID del tablero y del sprint que quieras consultar
     board_id = boards[0]["id"]  # el primero como ejemplo
     sprints = get_sprints(board_id)
-    print("\nSprints:")
+    logger.info("Sprints:")
     for s in sprints:
-        print(f"{s['id']} - {s['name']}")
+        logger.info(f"{s['id']} - {s['name']}")
 
     sprint_id = sprints[0]["id"]  # primer sprint como ejemplo
     issues = get_issues(board_id, sprint_id)
     in_progress = filter_in_progress(issues)
 
-    print("\nTareas EN CURSO:")
+    logger.info("Tareas EN CURSO:")
     for t in in_progress:
-        print(f"- {t['id']} | {t['summary']}")
+        logger.info(f"- {t['id']} | {t['summary']}")
