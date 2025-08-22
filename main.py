@@ -28,9 +28,9 @@ def get_boards():
     r.raise_for_status()
     return r.json()
 
-# 2. Filtrar tableros por nombre
+# 2. Filtrar tableros por nombre (coincidencia exacta, ignorando mayúsculas/minúsculas)
 def filter_boards(boards, name):
-    return [b for b in boards if name.lower() in b['name'].lower()]
+    return [b for b in boards if b['name'].strip().lower() == name.strip().lower()]
 
 # 3. Obtener issues de un sprint
 def get_issues(board_id, sprint_id):
