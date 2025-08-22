@@ -104,29 +104,34 @@ class MarkdownFormatter:
         # Buscar días (d)
         if 'd' in time_str:
             try:
-                days = float(time_str.split('d')[0].strip())
+                days_part = time_str.split('d')[0].strip()
+                days = float(days_part)
                 total_hours += days * 8  # Asumimos 8 horas por día
+                # Quitar la parte de días para procesar el resto
+                time_str = time_str.split('d')[1].strip() if 'd' in time_str else time_str
             except:
                 pass
         
         # Buscar horas (h)
         if 'h' in time_str:
             try:
-                # Extraer la parte de horas
-                h_part = time_str.split('h')[0]
-                if 'd' in h_part:
-                    h_part = h_part.split('d')[1]
-                hours = float(h_part.strip())
+                # Extraer la parte antes de 'h'
+                h_part = time_str.split('h')[0].strip()
+                hours = float(h_part)
                 total_hours += hours
+                # Quitar la parte de horas para procesar minutos
+                time_str = time_str.split('h')[1].strip() if 'h' in time_str else ""
             except:
                 pass
         
-        # Buscar minutos (m)
-        if 'm' in time_str and 'h' not in time_str:
+        # Buscar minutos (m) - ahora también procesa si hay horas
+        if 'm' in time_str:
             try:
-                # Solo si no hay horas, para evitar conflictos
-                minutes = float(time_str.split('m')[0].strip())
-                total_hours += minutes / 60
+                # Extraer la parte antes de 'm'
+                m_part = time_str.split('m')[0].strip()
+                if m_part:  # Solo si hay algo antes de 'm'
+                    minutes = float(m_part)
+                    total_hours += minutes / 60
             except:
                 pass
         
