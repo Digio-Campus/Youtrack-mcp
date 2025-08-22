@@ -4,6 +4,7 @@ import requests
 import dotenv
 import logging
 
+# Configurar logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("Youtrack MCP")
 
@@ -12,9 +13,10 @@ mcp = FastMCP("Youtrack MCP Server")
 
 # Configuración
 dotenv.load_dotenv()  # Cargar variables de entorno desde .env
-BASE_URL = "https://javilujann.youtrack.cloud/api"
+BASE_URL = dotenv.get_key('.env', 'YOUTRACK_BASE_URL').rstrip('/')
+API_TOKEN = dotenv.get_key('.env', 'YOUTRACK_API_TOKEN')
 HEADERS = {
-    "Authorization": f"Bearer {dotenv.get_key('.env', 'YOUTRACK_API_TOKEN')}",
+    "Authorization": f"Bearer {API_TOKEN}",
     "Accept": "application/json"
 }
 
