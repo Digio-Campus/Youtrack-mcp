@@ -52,6 +52,15 @@ def filter_in_progress(issues):
                 })
     return result
 
+def generateMarkdown(issues : str) -> str:
+    in_progress = filter_in_progress(issues)
+    if not in_progress:
+        return "# Tareas en curso\n\nNo hay tareas en curso."
+
+    tasks = "\n".join(f"- {t['id']} | {t['summary']}" for t in in_progress)
+    return f"# Tareas en curso\n\n{tasks}\n"
+
+
 # Timestamp tool
 @mcp.tool()
 def getTasksInformation() -> str:
