@@ -94,13 +94,22 @@ pip install -r requirements.txt
 
 #### `getTasksInformation(name: str) -> str`
 
-Obtiene información de todas las tareas en progreso de un tablero específico.
+Obtiene información de todas las tareas en progreso de un tablero específico y genera un reporte completo con análisis de problemas.
 
 **Parámetros:**
 - `name`: Nombre del tablero de YouTrack
 
 **Retorna:**
-- Reporte en formato markdown con las tareas en progreso
+- Reporte en formato markdown que incluye:
+  - Tabla principal con todas las tareas en progreso
+  - Columna de alertas que identifica problemas
+  - Resumen de problemas encontrados
+  - Recomendaciones para mejorar la gestión
+
+**Tipos de alertas detectadas:**
+- 🔴 **Sin asignar**: Tareas que no tienen responsable
+- 🟡 **Sin estimación**: Tareas que no tienen tiempo estimado
+- 🟠 **Tiempo excedido**: Tareas donde el tiempo gastado supera la estimación
 
 ## Características
 
@@ -110,3 +119,5 @@ Obtiene información de todas las tareas en progreso de un tablero específico.
 - ✅ Separación de responsabilidades
 - ✅ Modelos de datos tipados
 - ✅ Filtrado de tareas terminadas vs en progreso
+- ✅ **Sistema de alertas y análisis de problemas**
+- ✅ **Reporte de recomendaciones para gestión de proyectos**
