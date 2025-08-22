@@ -28,7 +28,8 @@ def get_boards():
     r.raise_for_status()
     return r.json()
 
-def filter_boards(name):
+# 2. Filtrar tableros por nombre
+def filter_boards(boards, name):
     return [b for b in boards if name.lower() in b['name'].lower()]
 
 # 2. Listar sprints de un tablero
@@ -73,20 +74,19 @@ def getTasksInformation() -> str:
 
 if __name__ == "__main__":
     #mcp.run(transport="stdio")
-    boards = get_boards()
 
+    # Obtener todos los tableros
+    boards = get_boards()
     logger.info("Tableros disponibles:")
     for b in boards:
         logger.info(f"{b['id']} - {b['name']} con sprint: {b['currentSprint']['name'] if b.get('currentSprint') else 'N/A'}")
 
-    filtered_boards = filter_boards("Prueba")
-    board_id = filtered_boards[0]["id"]  # el primero como ejemplo
-    sprints = get_sprints(board_id)
-    logger.info("Sprints:")
-    for s in sprints:
-        logger.info(f"{s['id']} - {s['name']}")
+    # Filtrar tableros por nombre
+    filtered_boards = filter_boards(boards, "Demo project Overview")
+    board = filtered_boards[0]
+    board_id = board["id"]  # el primero como ejemplo
 
-    sprint_id = sprints[0]["id"]  # primer sprint como ejemplo
+    sprint_id = board["currentSprint"]["id"]  # sprint actual como ejemplo
     issues = get_issues(board_id, sprint_id)
     in_progress = filter_in_progress(issues)
 
