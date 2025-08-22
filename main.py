@@ -86,15 +86,34 @@ if __name__ == "__main__":
     for b in boards:
         logger.info(f"{b['id']} - {b['name']} con sprint: {b['currentSprint']['name'] if b.get('currentSprint') else 'N/A'}")
 
-    # Filtrar tableros por nombre
+    # Filtrar tableros por nombre, para obtener el tablero deseado
     filtered_boards = filter_boards(boards, "Demo project Overview")
-    board = filtered_boards[0]
-    board_id = board["id"]  # el primero como ejemplo
+    if not filtered_boards:
+        logger.error("No se encontró ningún tablero con ese nombre.")
+        exit(1)
 
-    sprint_id = board["currentSprint"]["id"]  # sprint actual como ejemplo
+    if len(filtered_boards) > 1:
+        logger.warning("Se encontraron múltiples tableros con ese nombre.")
+        exit(1)
+
+    board = filtered_boards[0]
+    
+    # Obtener las issues del sprint actual
+    board_id = board['id']
+    sprint_id = board['currentSprint']['id'] if board.get('currentSprint') else None
+    if not sprint_id:
+        logger.error("El tablero no tiene un sprint activo.")
+        exit(1)
+
     issues = get_issues(board_id, sprint_id)
+
+    # Quedarse solo con las tareas no terminadas
     in_progress = filter_in_progress(issues)
 
     logger.info("Tareas EN CURSO:")
     for t in in_progress:
         logger.info(f"- {t['id']} | {t['summary']}")
+
+    # Generar el markdown
+    markdown = generateMarkdown(in_progress)
+    
