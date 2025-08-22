@@ -32,11 +32,20 @@ HEADERS = {
 
 # 1. Listar tableros
 def get_boards():
-    fields = "id,name,currentSprint(id,name)"
-    url = f"{BASE_URL}/agiles?fields={fields}"
-    r = requests.get(url, headers=HEADERS)
-    r.raise_for_status()
-    return r.json()
+    try:
+        fields = "id,name,currentSprint(id,name)"
+        url = f"{BASE_URL}/agiles?fields={fields}"
+        r = requests.get(url, headers=HEADERS, timeout=30)
+        r.raise_for_status()
+        return r.json(), None
+    except requests.exceptions.RequestException as e:
+        error_msg = f"Error al obtener tableros: {str(e)}"
+        logger.error(error_msg)
+        return None, error_msg
+    except Exception as e:
+        error_msg = f"Error inesperado al obtener tableros: {str(e)}"
+        logger.error(error_msg)
+        return None, error_msg
 
 # 2. Filtrar tableros por nombre (coincidencia exacta, ignorando mayúsculas/minúsculas)
 def filter_boards(boards, name):
@@ -44,11 +53,20 @@ def filter_boards(boards, name):
 
 # 3. Obtener issues de un sprint
 def get_issues(board_id, sprint_id):
-    fields = "id,summary,created,updated,resolved,customFields(id,name,value(name,email,presentation))"
-    url = f"{BASE_URL}/agiles/{board_id}/sprints/{sprint_id}/issues?fields={fields}"
-    r = requests.get(url, headers=HEADERS)
-    r.raise_for_status()
-    return r.json()
+    try:
+        fields = "id,summary,created,updated,resolved,customFields(id,name,value(name,email,presentation))"
+        url = f"{BASE_URL}/agiles/{board_id}/sprints/{sprint_id}/issues?fields={fields}"
+        r = requests.get(url, headers=HEADERS, timeout=30)
+        r.raise_for_status()
+        return r.json(), None
+    except requests.exceptions.RequestException as e:
+        error_msg = f"Error al obtener issues del sprint {sprint_id}: {str(e)}"
+        logger.error(error_msg)
+        return None, error_msg
+    except Exception as e:
+        error_msg = f"Error inesperado al obtener issues: {str(e)}"
+        logger.error(error_msg)
+        return None, error_msg
 
 # 4. Extraer información de campos personalizados de una issue
 def extract_issue_fields(issue):
@@ -158,7 +176,10 @@ def getTasksInformation(name : str) -> str:
         return "❌ **Error de configuración**\n\nLas variables de entorno YOUTRACK_BASE_URL y YOUTRACK_API_TOKEN deben estar configuradas."
     
     # Obtener todos los tableros
-    boards = get_boards()
+    boards, error = get_boards()
+    if error:
+        return f"❌ **Error al obtener tableros**\n\n{error}"
+    
     logger.info("Tableros disponibles:")
     for b in boards:
         logger.info(f"{b['id']} - {b['name']} con sprint: {b['currentSprint']['name'] if b.get('currentSprint') else 'N/A'}")
@@ -166,12 +187,12 @@ def getTasksInformation(name : str) -> str:
     # Filtrar tableros por nombre, para obtener el tablero deseado
     filtered_boards = filter_boards(boards, name)
     if not filtered_boards:
-        logger.error("No se encontró ningún tablero con ese nombre.")
-        exit(1)
+        available_boards = [b['name'] for b in boards]
+        return f"❌ **Tablero no encontrado**\n\nNo se encontró ningún tablero con el nombre '{name}'.\n\n**Tableros disponibles:**\n" + "\n".join([f"- {board}" for board in available_boards])
 
     if len(filtered_boards) > 1:
-        logger.warning("Se encontraron múltiples tableros con ese nombre.")
-        exit(1)
+        board_names = [b['name'] for b in filtered_boards]
+        return f"⚠️ **Múltiples tableros encontrados**\n\nSe encontraron múltiples tableros con el nombre '{name}':\n" + "\n".join([f"- {board}" for board in board_names])
 
     board = filtered_boards[0]
     
@@ -179,10 +200,11 @@ def getTasksInformation(name : str) -> str:
     board_id = board['id']
     sprint_id = board['currentSprint']['id'] if board.get('currentSprint') else None
     if not sprint_id:
-        logger.error("El tablero no tiene un sprint activo.")
-        exit(1)
+        return f"⚠️ **Sin sprint activo**\n\nEl tablero '{board['name']}' no tiene un sprint activo."
 
-    issues = get_issues(board_id, sprint_id)
+    issues, error = get_issues(board_id, sprint_id)
+    if error:
+        return f"❌ **Error al obtener tareas**\n\n{error}"
 
     # Quedarse solo con las tareas no terminadas
     in_progress = filter_in_progress(issues)
