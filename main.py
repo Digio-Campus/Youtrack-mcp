@@ -20,10 +20,14 @@ HEADERS = {
 
 # 1. Listar tableros
 def get_boards():
-    url = f"{BASE_URL}/agiles?fields=id,name"
+    fields = "id,name,currentSprint(id,name)"
+    url = f"{BASE_URL}/agiles?fields={fields}"
     r = requests.get(url, headers=HEADERS)
     r.raise_for_status()
     return r.json()
+
+def filter_boards(name):
+    return [b for b in boards if name.lower() in b['name'].lower()]
 
 # 2. Listar sprints de un tablero
 def get_sprints(board_id):
@@ -73,8 +77,8 @@ if __name__ == "__main__":
     for b in boards:
         logger.info(f"{b['id']} - {b['name']} con sprint: {b['currentSprint']['name'] if b.get('currentSprint') else 'N/A'}")
 
-    # ⚠️ Aquí pon el ID del tablero y del sprint que quieras consultar
-    board_id = boards[0]["id"]  # el primero como ejemplo
+    filtered_boards = filter_boards("Prueba")
+    board_id = filtered_boards[0]["id"]  # el primero como ejemplo
     sprints = get_sprints(board_id)
     logger.info("Sprints:")
     for s in sprints:
