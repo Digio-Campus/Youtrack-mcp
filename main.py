@@ -34,31 +34,101 @@ def filter_boards(boards, name):
 
 # 3. Obtener issues de un sprint
 def get_issues(board_id, sprint_id):
-    fields = "id,summary,customFields(id,name,value(name))"
+    fields = "id,summary,created,updated,resolved,customFields(id,name,value(name,email,presentation))"
     url = f"{BASE_URL}/agiles/{board_id}/sprints/{sprint_id}/issues?fields={fields}"
     r = requests.get(url, headers=HEADERS)
     r.raise_for_status()
     return r.json()
 
-# 4. Filtrar tareas "En curso"
+# 4. Extraer información de campos personalizados de una issue
+def extract_issue_fields(issue):
+    """
+    Extrae y decodifica los campos personalizados de una issue de YouTrack.
+    
+    Args:
+        issue (dict): Issue de YouTrack con customFields
+        
+    Returns:
+        dict: Diccionario con los campos extraídos
+    """
+    extracted = {
+        "id": issue["id"],
+        "summary": issue["summary"],
+        "state": None,
+        "assignee": None,
+        "estimation": None,
+        "spent": None,
+        "priority": None,
+        "created": issue.get("created"),
+        "updated": issue.get("updated")
+    }
+    
+    for field in issue.get("customFields", []):
+        if field["name"] == "State":
+            extracted["state"] = field.get("value", {}).get("name")
+        elif field["name"] == "Assignee":
+            extracted["assignee"] = field.get("value")
+        elif field["name"] == "Estimation":
+            extracted["estimation"] = field.get("value", {}).get("presentation") if field.get("value") else None
+        elif field["name"] == "Spent time":
+            extracted["spent"] = field.get("value", {}).get("presentation") if field.get("value") else None
+        elif field["name"] == "Priority":
+            extracted["priority"] = field.get("value", {}).get("name") if field.get("value") else None
+    
+    return extracted
+
+# 5. Filtrar tareas "En curso"
 def filter_in_progress(issues):
+    """
+    Filtra las issues que están en progreso (no terminadas).
+    
+    Args:
+        issues (list): Lista de issues de YouTrack
+        
+    Returns:
+        list: Lista de issues en progreso con información estructurada
+    """
+    # Estados que consideramos "terminados"
+    FINISHED_STATES = ["Fixed", "Verified"]
+    
     result = []
     for issue in issues:
-        for field in issue.get("customFields", []):
-            if field["name"] == "State" and field.get("value", {}).get("name") != "Fixed":
-                result.append({
-                    "id": issue["id"],
-                    "summary": issue["summary"]
-                })
+        extracted_issue = extract_issue_fields(issue)
+        
+        # Solo incluir tareas que NO estén terminadas
+        if extracted_issue["state"] not in FINISHED_STATES:
+            result.append(extracted_issue)
+    
     return result
 
-def generateMarkdown(issues : str) -> str:
+def generateMarkdown(issues : list) -> str:
+    """
+    Genera un markdown con información de las tareas en progreso.
+    
+    Args:
+        issues (list): Lista de issues de YouTrack
+        
+    Returns:
+        str: Markdown con el reporte de tareas
+    """
     in_progress = filter_in_progress(issues)
     if not in_progress:
         return "# Tareas en curso\n\nNo hay tareas en curso."
 
-    tasks = "\n".join(f"- {t['id']} | {t['summary']}" for t in in_progress)
-    return f"# Tareas en curso\n\n{tasks}\n"
+    # Encabezado del markdown
+    md = "# Tareas en curso\n\n"
+    md += "| ID | Título | Responsable | Estado | Estimación | Tiempo gastado |\n"
+    md += "|-----|--------|------------|---------|------------|----------------|\n"
+    
+    for task in in_progress:
+        assignee_name = task["assignee"]["name"] if task["assignee"] else "Sin asignar"
+        estimation = task["estimation"] or "Sin est."
+        spent = task["spent"] or "Sin tiempo"
+        state = task["state"] or "Sin estado"
+        
+        md += f"| {task['id']} | {task['summary']} | {assignee_name} | {state} | {estimation} | {spent} |\n"
+    
+    return md
 
 
 # Timestamp tool
@@ -116,4 +186,4 @@ if __name__ == "__main__":
 
     # Generar el markdown
     markdown = generateMarkdown(in_progress)
-    
+    print(markdown)
