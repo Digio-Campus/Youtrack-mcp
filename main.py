@@ -111,7 +111,6 @@ def generateMarkdown(issues : list) -> str:
     Returns:
         str: Markdown con el reporte de tareas
     """
-    in_progress = filter_in_progress(issues)
     if not in_progress:
         return "# Tareas en curso\n\nNo hay tareas en curso."
 
