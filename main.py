@@ -32,13 +32,6 @@ def get_boards():
 def filter_boards(boards, name):
     return [b for b in boards if name.lower() in b['name'].lower()]
 
-# 2. Listar sprints de un tablero
-def get_sprints(board_id):
-    url = f"{BASE_URL}/agiles/{board_id}/sprints?fields=id,name"
-    r = requests.get(url, headers=HEADERS)
-    r.raise_for_status()
-    return r.json()
-
 # 3. Obtener issues de un sprint
 def get_issues(board_id, sprint_id):
     fields = "id,summary,customFields(id,name,value(name))"
