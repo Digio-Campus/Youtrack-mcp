@@ -111,7 +111,7 @@ def generateMarkdown(issues : list) -> str:
     Returns:
         str: Markdown con el reporte de tareas
     """
-    if not in_progress:
+    if not issues:
         return "# Tareas en curso\n\nNo hay tareas en curso."
 
     # Encabezado del markdown
@@ -119,7 +119,7 @@ def generateMarkdown(issues : list) -> str:
     md += "| ID | Título | Responsable | Estado | Estimación | Tiempo gastado |\n"
     md += "|-----|--------|------------|---------|------------|----------------|\n"
     
-    for task in in_progress:
+    for task in issues:
         assignee_name = task["assignee"]["name"] if task["assignee"] else "Sin asignar"
         estimation = task["estimation"] or "Sin est."
         spent = task["spent"] or "Sin tiempo"
@@ -142,13 +142,7 @@ def getTasksInformation(name : str) -> str:
     Returns:
         str: A string containing information about all tasks in markdown format.
     """
-    return "Task information in markdown format"
-
-
-
-if __name__ == "__main__":
-    #mcp.run(transport="stdio")
-
+    
     # Obtener todos los tableros
     boards = get_boards()
     logger.info("Tableros disponibles:")
@@ -156,7 +150,7 @@ if __name__ == "__main__":
         logger.info(f"{b['id']} - {b['name']} con sprint: {b['currentSprint']['name'] if b.get('currentSprint') else 'N/A'}")
 
     # Filtrar tableros por nombre, para obtener el tablero deseado
-    filtered_boards = filter_boards(boards, "Demo project Overview")
+    filtered_boards = filter_boards(boards, name)
     if not filtered_boards:
         logger.error("No se encontró ningún tablero con ese nombre.")
         exit(1)
@@ -184,5 +178,9 @@ if __name__ == "__main__":
         logger.info(f"- {t['id']} | {t['summary']}")
 
     # Generar el markdown
-    markdown = generateMarkdown(in_progress)
-    print(markdown)
+    return generateMarkdown(in_progress)
+
+
+
+if __name__ == "__main__":
+    mcp.run(transport="stdio")
