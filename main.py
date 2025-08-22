@@ -1,7 +1,7 @@
 # server.py
 from mcp.server.fastmcp import FastMCP
 import requests
-import dotenv
+import os
 import logging
 
 # Configurar logging
@@ -11,14 +11,24 @@ logger = logging.getLogger("Youtrack MCP")
 # Create the MCP server instance
 mcp = FastMCP("Youtrack MCP Server")
 
-# Configuración
-dotenv.load_dotenv()  # Cargar variables de entorno desde .env
-BASE_URL = dotenv.get_key('.env', 'YOUTRACK_BASE_URL').rstrip('/')
-API_TOKEN = dotenv.get_key('.env', 'YOUTRACK_API_TOKEN')
+# Configuración - Variables de entorno del sistema
+BASE_URL = os.getenv('YOUTRACK_BASE_URL')
+API_TOKEN = os.getenv('YOUTRACK_API_TOKEN')
+
+# Validar que las variables de entorno estén configuradas
+if not BASE_URL:
+    logger.error("Variable de entorno YOUTRACK_BASE_URL no configurada")
+if not API_TOKEN:
+    logger.error("Variable de entorno YOUTRACK_API_TOKEN no configurada")
+
+# Normalizar BASE_URL
+if BASE_URL:
+    BASE_URL = BASE_URL.rstrip('/')
+
 HEADERS = {
     "Authorization": f"Bearer {API_TOKEN}",
     "Accept": "application/json"
-}
+} if API_TOKEN else {}
 
 # 1. Listar tableros
 def get_boards():
@@ -142,6 +152,10 @@ def getTasksInformation(name : str) -> str:
     Returns:
         str: A string containing information about all tasks in markdown format.
     """
+    
+    # Validar configuración
+    if not BASE_URL or not API_TOKEN:
+        return "❌ **Error de configuración**\n\nLas variables de entorno YOUTRACK_BASE_URL y YOUTRACK_API_TOKEN deben estar configuradas."
     
     # Obtener todos los tableros
     boards = get_boards()
