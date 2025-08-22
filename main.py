@@ -63,10 +63,13 @@ def generateMarkdown(issues : str) -> str:
 
 # Timestamp tool
 @mcp.tool()
-def getTasksInformation() -> str:
+def getTasksInformation(name : str) -> str:
     """
     Read the Agile Panel from Youtrack, obtaining information about all the tasks and returns a markdown detailing it.
-    
+
+    Args:
+        name (str): The name of the board to which the tasks belong.
+
     Returns:
         str: A string containing information about all tasks in markdown format.
     """
