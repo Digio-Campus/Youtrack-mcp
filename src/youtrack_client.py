@@ -33,7 +33,7 @@ class YouTrackClient:
             fields = "id,name,currentSprint(id,name)"
             url = f"{self.config.base_url}/agiles?fields={fields}"
             
-            response = requests.get(url, headers=self.config.headers, timeout=30)
+            response = requests.get(url, headers=self.config.headers, timeout=self.config.timeout)
             response.raise_for_status()
             
             boards_data = response.json()
@@ -75,7 +75,7 @@ class YouTrackClient:
             fields = "id,summary,created,updated,resolved,customFields(id,name,value(name,email,presentation))"
             url = f"{self.config.base_url}/agiles/{board_id}/sprints/{sprint_id}/issues?fields={fields}"
             
-            response = requests.get(url, headers=self.config.headers, timeout=30)
+            response = requests.get(url, headers=self.config.headers, timeout=self.config.timeout)
             response.raise_for_status()
             
             issues_data = response.json()

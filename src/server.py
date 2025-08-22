@@ -12,11 +12,11 @@ logger = logging.getLogger("Youtrack MCP")
 
 # Create the MCP server instance
 mcp = FastMCP("Youtrack MCP Server")
-
-# Inicializar configuración y cliente
-config = YouTrackConfig()
-client = YouTrackClient(config)
 formatter = MarkdownFormatter()
+
+# Variables globales que se inicializarán en run_server()
+config = None
+client = None
 
 
 @mcp.tool()
@@ -32,7 +32,7 @@ def getTasksInformation(name: str) -> str:
     """
     
     # Validar configuración
-    if not config.is_configured:
+    if not config or not config.is_configured:
         return "❌ **Error de configuración**\n\nLas variables de entorno YOUTRACK_BASE_URL y YOUTRACK_API_TOKEN deben estar configuradas."
     
     # Buscar tablero por nombre
@@ -50,7 +50,10 @@ def getTasksInformation(name: str) -> str:
         return f"❌ **Error al obtener tareas**\n\n{error}"
     
     # Filtrar solo tareas en progreso (no terminadas)
-    in_progress_issues = [issue for issue in issues if not issue.is_finished]
+    in_progress_issues = [
+        issue for issue in issues 
+        if not issue.is_finished(config.finished_states)
+    ]
     
     # Log de tareas en progreso
     logger.info("Tareas EN CURSO:")
@@ -61,6 +64,21 @@ def getTasksInformation(name: str) -> str:
     return formatter.format_tasks_report(in_progress_issues)
 
 
-def run_server():
-    """Ejecuta el servidor MCP"""
+def run_server(timeout: int = 30, finished_states: str = "Fixed,Verified"):
+    """
+    Ejecuta el servidor MCP con configuración personalizable
+    
+    Args:
+        timeout: Timeout para requests en segundos
+        finished_states: Estados considerados terminados (separados por comas)
+    """
+    global config, client
+    
+    # Parsear estados terminados
+    parsed_states = [state.strip() for state in finished_states.split(',')]
+    
+    # Inicializar configuración y cliente una sola vez
+    config = YouTrackConfig(timeout=timeout, finished_states=parsed_states)
+    client = YouTrackClient(config)
+    
     mcp.run(transport="stdio")

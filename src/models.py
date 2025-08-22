@@ -55,8 +55,11 @@ class Issue:
         
         return extracted
     
-    @property
-    def is_finished(self) -> bool:
-        """Verifica si la issue está terminada"""
-        FINISHED_STATES = ["Fixed", "Verified"]
-        return self.state in FINISHED_STATES
+    def is_finished(self, finished_states: List[str]) -> bool:
+        """
+        Verifica si la issue está terminada
+        
+        Args:
+            finished_states: Lista de estados considerados como terminados
+        """
+        return self.state in finished_states
