@@ -3,7 +3,7 @@
 Punto de entrada principal para el servidor MCP de YouTrack
 """
 import argparse
-from src.server import run_server
+from .server import run_server
 
 
 def main():
