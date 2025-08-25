@@ -13,41 +13,25 @@ Este servidor MCP proporciona herramientas para:
 
 ```
 youtrack-mcp/
-├── main.py              # Punto de entrada principal
 ├── src/
 │   ├── __init__.py
+│   ├── main.py          # Punto de entrada principal  
 │   ├── config.py        # Configuración y variables de entorno
 │   ├── models.py        # Modelos de datos (Board, Issue)
 │   ├── youtrack_client.py  # Cliente para la API de YouTrack
 │   ├── formatters.py    # Formateadores de salida (markdown)
 │   └── server.py        # Servidor MCP
-├── requirements.txt     # Dependencias
+├── pyproject.toml       # Configuración del proyecto y dependencias
+├── uv.lock             # Versiones exactas de dependencias
+├── requirements.txt     # Dependencias (para compatibilidad)
 └── README.md           # Este archivo
 ```
 
 ## Uso
 
-### Como servidor MCP
+El servidor se ejecuta automáticamente cuando se configura en un cliente MCP compatible.
 
-El servidor se ejecuta automáticamente cuando se configura en un cliente MCP compatible. La configuración se realiza a través del archivo `mcp.json` como se muestra abajo.
-
-### Ejecución directa (desarrollo/testing)
-
-```bash
-# Con variables de entorno del sistema
-export YOUTRACK_BASE_URL="https://tu-instancia.youtrack.cloud/api"
-export YOUTRACK_API_TOKEN="tu-token"
-
-# Ejecutar servidor
-python3 main.py
-
-# Con argumentos personalizados
-python3 main.py --timeout 60 --finished-states "Done,Closed"
-```
-
-### Como servidor MCP
-
-Este servidor se configura a través de un archivo `mcp.json` que especifica las variables de entorno y argumentos del servidor.
+La configuración, para VSCode, se realiza a través del archivo `mcp.json` que especifica las variables de entorno y argumentos del servidor.
 
 **Ejemplo de configuración en `mcp.json`:**
 
@@ -56,9 +40,9 @@ Este servidor se configura a través de un archivo `mcp.json` que especifica las
     "servers": {
         "youtrack": {
             "type": "stdio",
-            "command": "/path/to/python",
+            "command": "uvx",
             "args": [
-                "main.py",
+                "youtrack-mcp",
                 "--timeout",
                 "30",
                 "--finished-states",
@@ -84,12 +68,6 @@ Este servidor se configura a través de un archivo `mcp.json` que especifica las
 - `--timeout`: Timeout para requests HTTP en segundos (default: 30)
 - `--finished-states`: Estados considerados terminados, separados por comas (default: "Fixed,Verified")
 
-### Instalación
-
-```bash
-pip install -r requirements.txt
-```
-
 ### Herramientas disponibles
 
 #### `getTasksInformation(name: str) -> str`
@@ -100,16 +78,15 @@ Obtiene información de todas las tareas en progreso de un tablero específico y
 - `name`: Nombre del tablero de YouTrack
 
 **Retorna:**
-- Reporte en formato markdown que incluye:
-  - Tabla principal con todas las tareas en progreso
-  - Columna de alertas que identifica problemas
-  - Resumen de problemas encontrados
-  - Recomendaciones para mejorar la gestión
-
-**Tipos de alertas detectadas:**
-- 🔴 **Sin asignar**: Tareas que no tienen responsable
-- 🟡 **Sin estimación**: Tareas que no tienen tiempo estimado
-- 🟠 **Tiempo excedido**: Tareas donde el tiempo gastado supera la estimación
+- Tabla con todas las tareas en progreso indicando:
+    - id
+    - nombre
+    - responsable
+    - estado
+    - tiempo estimado
+    - tiempo gastado
+    - tiempo desde la ultima actualización
+    - ultimo comentario
 
 ## Características
 
@@ -119,5 +96,3 @@ Obtiene información de todas las tareas en progreso de un tablero específico y
 - ✅ Separación de responsabilidades
 - ✅ Modelos de datos tipados
 - ✅ Filtrado de tareas terminadas vs en progreso
-- ✅ **Sistema de alertas y análisis de problemas**
-- ✅ **Reporte de recomendaciones para gestión de proyectos**
