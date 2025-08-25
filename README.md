@@ -42,6 +42,8 @@ La configuración, para VSCode, se realiza a través del archivo `mcp.json` que 
             "type": "stdio",
             "command": "uvx",
             "args": [
+                "--from",
+                "git+https://github.com/Digio-Campus/Youtrack-mcp",
                 "youtrack-mcp",
                 "--timeout",
                 "30",
