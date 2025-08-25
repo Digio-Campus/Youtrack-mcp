@@ -64,8 +64,8 @@ class MarkdownFormatter:
 
         # Generar reporte principal
         md = "# Tareas en curso\n\n"
-        md += "| ID | Título | Responsable | Estado | Estimación | Tiempo gastado | Última actualización |\n"
-        md += "|-----|--------|------------|---------|------------|----------------|---------------------|\n"
+        md += "| ID | Título | Responsable | Estado | Estimación | Tiempo gastado | Última actualización | Último comentario |\n"
+        md += "|-----|--------|------------|---------|------------|----------------|---------------------|-------------------|\n"
 
 
         for task in issues:
@@ -74,7 +74,8 @@ class MarkdownFormatter:
             spent = task.spent or "Sin tiempo"
             state = task.state or "Sin estado"
             time_elapsed = _calculate_time_elapsed(task.updated) if task.updated else "Desconocido"
+            last_comment = task.last_comment or "Sin comentarios"
 
-            md += f"| {task.id} | {task.summary} | {assignee_name} | {state} | {estimation} | {spent} | {time_elapsed} |\n"
+            md += f"| {task.id} | {task.summary} | {assignee_name} | {state} | {estimation} | {spent} | {time_elapsed} | {last_comment} |\n"
 
         return md

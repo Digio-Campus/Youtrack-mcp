@@ -26,6 +26,7 @@ class Issue:
     priority: Optional[str] = None
     created: Optional[str] = None
     updated: Optional[str] = None
+    last_comment: Optional[str] = None
     
     @classmethod
     def from_youtrack_data(cls, issue_data: Dict[str, Any]) -> 'Issue':
@@ -52,6 +53,19 @@ class Issue:
                 extracted.spent = field_value.get("presentation")
             elif field_name == "Priority" and field_value:
                 extracted.priority = field_value.get("name")
+        
+        # Extraer último comentario
+        comments = issue_data.get("comments", [])
+        if comments:
+            # Ordenar comentarios por fecha de creación (más reciente primero)
+            sorted_comments = sorted(comments, key=lambda x: x.get("created", 0), reverse=True)
+            latest_comment = sorted_comments[0]
+            
+            # Formatear el comentario
+            comment_text = latest_comment.get("text", "").strip()
+            author_name = latest_comment.get("author", {}).get("name", "Desconocido")
+            
+            extracted.last_comment = f"{author_name}: {comment_text}" if comment_text else None
         
         return extracted
     
