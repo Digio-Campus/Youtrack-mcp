@@ -3,6 +3,7 @@ Modelos de datos para YouTrack
 """
 from typing import Optional, List, Dict, Any
 from dataclasses import dataclass
+from .utils import _calculate_time_elapsed
 
 
 @dataclass
@@ -64,8 +65,11 @@ class Issue:
             # Formatear el comentario
             comment_text = latest_comment.get("text", "").strip()
             author_name = latest_comment.get("author", {}).get("name", "Desconocido")
-            
-            extracted.last_comment = f"{author_name}: {comment_text}" if comment_text else None
+            comment_created = latest_comment.get("created")
+            elapsed = _calculate_time_elapsed(comment_created) if comment_created else "Desconocido"
+
+                
+            extracted.last_comment = f"{author_name}: {comment_text} ({elapsed})" if comment_text else None
         
         return extracted
     
