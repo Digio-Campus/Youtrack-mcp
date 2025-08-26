@@ -129,7 +129,7 @@ class YouTrackClient:
 
     def get_issue_by_id(self, issue_id: str) -> Tuple[Optional[Issue], Optional[str]]:
         """
-        Obtiene una issue específica por su ID con información detallada
+        Obtiene una issue específica por su ID con información detallada completa
         
         Args:
             issue_id: ID de la issue a obtener
@@ -138,8 +138,8 @@ class YouTrackClient:
             Tuple[Optional[Issue], Optional[str]]: Issue encontrada y error si existe
         """
         try:
-            # Campos detallados incluyendo todos los comentarios
-            fields = "id,summary,description,created,updated,resolved,customFields(id,name,value(name,email,presentation)),comments(text,created,author(name,email)),attachments(id,name,size,url)"
+            # Campos completos para análisis detallado - incluimos todo lo disponible
+            fields = "id,summary,description,created,updated,resolved,reporter(name,email),updater(name,email),customFields(id,name,value,type,$type),comments(text,created,updated,author(name,email)),attachments(id,name,size,url,mimeType),links(direction,linkType(name),issues(id,summary)),tags(name),votes,watchers(hasStar),visibility(type,permittedGroups(name),permittedUsers(name))"
             url = f"{self.config.base_url}/issues/{issue_id}?fields={fields}"
             
             response = requests.get(url, headers=self.config.headers, timeout=self.config.timeout)

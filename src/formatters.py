@@ -53,7 +53,7 @@ class MarkdownFormatter:
     @staticmethod
     def format_single_issue(issue: Issue) -> str:
         """
-        Genera un reporte detallado en markdown de una issue específica
+        Genera un reporte completo y detallado en markdown de una issue específica
         
         Args:
             issue: Issue a formatear
@@ -87,6 +87,33 @@ class MarkdownFormatter:
             md += f"| **Última actualización** | {updated_elapsed} |\n"
         else:
             md += "| **Última actualización** | Fecha desconocida |\n"
+            
+        if issue.resolved:
+            resolved_elapsed = _calculate_time_elapsed(issue.resolved)
+            md += f"| **Resuelta** | {resolved_elapsed} |\n"
+        
+        md += "\n"
+        
+        # Información adicional desde raw_data
+        if issue.raw_data:
+            raw = issue.raw_data
+            
+            # Reporter y Updater
+            if raw.get("reporter"):
+                reporter_name = raw["reporter"].get("name", "Desconocido")
+                md += f"| **Reportada por** | {reporter_name} |\n"
+            
+            if raw.get("updater"):
+                updater_name = raw["updater"].get("name", "Desconocido")
+                md += f"| **Última actualización por** | {updater_name} |\n"
+                
+            # Votos y watchers
+            if raw.get("votes") is not None:
+                md += f"| **Votos** | {raw['votes']} |\n"
+                
+            if raw.get("watchers"):
+                has_star = raw["watchers"].get("hasStar", False)
+                md += f"| **Marcada como favorita** | {'Sí' if has_star else 'No'} |\n"
         
         md += "\n"
         
@@ -94,6 +121,35 @@ class MarkdownFormatter:
         if issue.description and issue.description.strip():
             md += "## Descripción\n\n"
             md += f"{issue.description.strip()}\n\n"
+        
+        # TODOS los Custom Fields
+        if issue.all_custom_fields and len(issue.all_custom_fields) > 0:
+            md += f"## Campos Personalizados ({len(issue.all_custom_fields)} total)\n\n"
+            md += "| Campo | Valor | Tipo | ID |\n"
+            md += "|-------|-------|------|----|\n"
+            
+            for field in issue.all_custom_fields:
+                field_name = field.get("name", "Sin nombre")
+                field_value = "Sin valor"
+                field_type = field.get("type", field.get("$type", "Desconocido"))
+                field_id = field.get("id", "Sin ID")
+                
+                # Formatear el valor según el tipo
+                if field.get("value"):
+                    value_data = field["value"]
+                    if isinstance(value_data, dict):
+                        if "name" in value_data:
+                            field_value = value_data["name"]
+                        elif "presentation" in value_data:
+                            field_value = value_data["presentation"]
+                        else:
+                            field_value = str(value_data)
+                    else:
+                        field_value = str(value_data)
+                
+                md += f"| {field_name} | {field_value} | {field_type} | {field_id} |\n"
+            
+            md += "\n"
         
         # Comentarios detallados
         if issue.comments and len(issue.comments) > 0:
@@ -108,6 +164,64 @@ class MarkdownFormatter:
         else:
             md += "## Comentarios\n\n"
             md += "No hay comentarios disponibles.\n\n"
+        
+        # Información adicional desde raw_data
+        if issue.raw_data:
+            raw = issue.raw_data
+            
+            # Tags
+            if raw.get("tags") and len(raw["tags"]) > 0:
+                md += "## Tags\n\n"
+                tag_names = [tag.get("name", "Sin nombre") for tag in raw["tags"]]
+                md += f"- {', '.join(tag_names)}\n\n"
+            
+            # Attachments
+            if raw.get("attachments") and len(raw["attachments"]) > 0:
+                md += f"## Archivos Adjuntos ({len(raw['attachments'])} total)\n\n"
+                md += "| Nombre | Tamaño | Tipo | URL |\n"
+                md += "|--------|--------|------|-----|\n"
+                
+                for attachment in raw["attachments"]:
+                    name = attachment.get("name", "Sin nombre")
+                    size = attachment.get("size", "Desconocido")
+                    mime_type = attachment.get("mimeType", "Desconocido")
+                    url = attachment.get("url", "Sin URL")
+                    
+                    md += f"| {name} | {size} bytes | {mime_type} | {url} |\n"
+                
+                md += "\n"
+            
+            # Links a otras issues
+            if raw.get("links") and len(raw["links"]) > 0:
+                md += f"## Enlaces a otras Issues ({len(raw['links'])} total)\n\n"
+                
+                for link in raw["links"]:
+                    direction = link.get("direction", "Desconocido")
+                    link_type = link.get("linkType", {}).get("name", "Desconocido")
+                    
+                    if link.get("issues"):
+                        for linked_issue in link["issues"]:
+                            issue_id = linked_issue.get("id", "Sin ID")
+                            issue_summary = linked_issue.get("summary", "Sin título")
+                            md += f"- **{direction}** ({link_type}): {issue_id} - {issue_summary}\n"
+                
+                md += "\n"
+            
+            # Visibility/Permisos
+            if raw.get("visibility"):
+                visibility = raw["visibility"]
+                md += "## Visibilidad y Permisos\n\n"
+                md += f"- **Tipo**: {visibility.get('type', 'Desconocido')}\n"
+                
+                if visibility.get("permittedGroups"):
+                    groups = [g.get("name", "Sin nombre") for g in visibility["permittedGroups"]]
+                    md += f"- **Grupos permitidos**: {', '.join(groups)}\n"
+                
+                if visibility.get("permittedUsers"):
+                    users = [u.get("name", "Sin nombre") for u in visibility["permittedUsers"]]
+                    md += f"- **Usuarios permitidos**: {', '.join(users)}\n"
+                
+                md += "\n"
         
         # Resumen para IA
         md += "## Resumen para Análisis\n\n"
@@ -128,5 +242,17 @@ class MarkdownFormatter:
             md += f"- Estimación sin tiempo registrado: {issue.estimation}\n"
         elif issue.spent:
             md += f"- Tiempo gastado sin estimación inicial: {issue.spent}\n"
+        
+        if issue.all_custom_fields:
+            md += f"- Total de campos personalizados: {len(issue.all_custom_fields)}\n"
+            
+        if issue.raw_data:
+            raw = issue.raw_data
+            if raw.get("attachments"):
+                md += f"- Archivos adjuntos: {len(raw['attachments'])}\n"
+            if raw.get("links"):
+                md += f"- Enlaces a otras issues: {len(raw['links'])}\n"
+            if raw.get("tags"):
+                md += f"- Tags: {len(raw['tags'])}\n"
         
         return md

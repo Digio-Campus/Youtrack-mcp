@@ -30,6 +30,11 @@ class Issue:
     updated: Optional[str] = None
     comments: Optional[List[str]] = None
     
+    # Campos adicionales para análisis detallado
+    resolved: Optional[str] = None
+    all_custom_fields: Optional[List[Dict[str, Any]]] = None
+    raw_data: Optional[Dict[str, Any]] = None  # Para guardar datos adicionales
+    
     @classmethod
     def from_youtrack_data(cls, issue_data: Dict[str, Any], num_comments: int = 1) -> 'Issue':
         """Crea una Issue desde los datos de YouTrack"""
@@ -38,11 +43,26 @@ class Issue:
             summary=issue_data["summary"],
             description=issue_data.get("description"),
             created=issue_data.get("created"),
-            updated=issue_data.get("updated")
+            updated=issue_data.get("updated"),
+            resolved=issue_data.get("resolved"),
+            raw_data=issue_data  # Guardamos todos los datos originales
         )
         
-        # Extraer campos personalizados
-        for field in issue_data.get("customFields", []):
+        # Extraer TODOS los custom fields como array
+        custom_fields_data = issue_data.get("customFields", [])
+        if custom_fields_data:
+            extracted.all_custom_fields = []
+            for field in custom_fields_data:
+                field_info = {
+                    "id": field.get("id"),
+                    "name": field.get("name"),
+                    "value": field.get("value"),
+                    "type": field.get("$type")  # Tipo del campo si está disponible
+                }
+                extracted.all_custom_fields.append(field_info)
+        
+        # Mantener extracción específica para compatibilidad con otros métodos
+        for field in custom_fields_data:
             field_name = field["name"]
             field_value = field.get("value")
             
