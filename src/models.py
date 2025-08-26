@@ -37,7 +37,6 @@ class Issue:
             id=issue_data["id"],
             summary=issue_data["summary"],
             updated=issue_data.get("updated"),
-            resolved=issue_data.get("resolved"),
             raw_data=issue_data  # Guardamos todos los datos originales
         )
 
