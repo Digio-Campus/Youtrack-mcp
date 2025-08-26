@@ -134,54 +134,39 @@ class MarkdownFormatter:
                 field_type = field.get("type", field.get("$type", "Desconocido"))
                 field_id = field.get("id", "Sin ID")
                 
-                # Formatear el valor según el tipo - lógica mejorada
-                if field.get("value") is not None:
+                # Lógica simple: intentar obtener el valor string directamente
+                if field.get("value"):
                     value_data = field["value"]
                     
                     if isinstance(value_data, dict):
-                        # Intentar extraer el valor real en orden de prioridad
-                        if "name" in value_data:
-                            field_value = value_data["name"]
-                        elif "presentation" in value_data:
-                            field_value = value_data["presentation"]
-                        elif "fullName" in value_data:
-                            field_value = value_data["fullName"]
-                        elif "login" in value_data:
-                            field_value = value_data["login"]
-                        elif "text" in value_data:
-                            field_value = value_data["text"]
-                        elif "value" in value_data:
-                            field_value = str(value_data["value"])
-                        elif len(value_data) == 1 and "$type" in value_data:
-                            # Solo contiene el tipo, probablemente sin valor asignado
-                            field_value = "Sin valor"
+                        # Prioridad: name > presentation > cualquier otro campo string
+                        if "name" in value_data and value_data["name"]:
+                            field_value = str(value_data["name"])
+                        elif "presentation" in value_data and value_data["presentation"]:
+                            field_value = str(value_data["presentation"])
                         else:
-                            # Intentar mostrar algo útil excluyendo metadatos
-                            filtered_data = {k: v for k, v in value_data.items() 
-                                           if not k.startswith('$') and k not in ['id', 'type']}
-                            if filtered_data:
-                                field_value = str(filtered_data)
-                            else:
-                                field_value = "Sin valor"
+                            # Si no hay name ni presentation, buscar cualquier valor string útil
+                            for key, val in value_data.items():
+                                if not key.startswith('$') and val and isinstance(val, (str, int, float)):
+                                    field_value = str(val)
+                                    break
                     elif isinstance(value_data, list):
-                        # Arrays de valores (ej: múltiples versiones, usuarios, etc.)
+                        # Para arrays, intentar obtener los nombres/valores
                         if value_data:
                             names = []
                             for item in value_data:
                                 if isinstance(item, dict):
-                                    if "name" in item:
-                                        names.append(item["name"])
-                                    elif "presentation" in item:
-                                        names.append(item["presentation"])
-                                    else:
-                                        names.append(str(item))
+                                    if "name" in item and item["name"]:
+                                        names.append(str(item["name"]))
+                                    elif "presentation" in item and item["presentation"]:
+                                        names.append(str(item["presentation"]))
                                 else:
                                     names.append(str(item))
-                            field_value = ", ".join(names)
+                            field_value = ", ".join(names) if names else "Lista vacía"
                         else:
                             field_value = "Lista vacía"
                     else:
-                        # Valor primitivo (string, number, boolean)
+                        # Valor primitivo directo
                         field_value = str(value_data)
                 
                 md += f"| {field_name} | {field_value} | {field_type} | {field_id} |\n"
