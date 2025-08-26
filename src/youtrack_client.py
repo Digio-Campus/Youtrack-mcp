@@ -60,13 +60,14 @@ class YouTrackClient:
             logger.error(error_msg)
             return [], error_msg
     
-    def get_sprint_issues(self, board_id: str, sprint_id: str) -> Tuple[List[Issue], Optional[str]]:
+    def get_sprint_issues(self, board_id: str, sprint_id: str, num_comments: int = 1) -> Tuple[List[Issue], Optional[str]]:
         """
         Obtiene las issues de un sprint específico
         
         Args:
             board_id: ID del tablero
             sprint_id: ID del sprint
+            num_comments: Número de comentarios a obtener por issue (por defecto 1)
             
         Returns:
             Tuple[List[Issue], Optional[str]]: Lista de issues y error si existe
@@ -79,7 +80,7 @@ class YouTrackClient:
             response.raise_for_status()
             
             issues_data = response.json()
-            issues = [Issue.from_youtrack_data(issue_data) for issue_data in issues_data]
+            issues = [Issue.from_youtrack_data(issue_data, num_comments) for issue_data in issues_data]
             
             return issues, None
             

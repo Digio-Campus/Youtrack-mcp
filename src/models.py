@@ -28,9 +28,10 @@ class Issue:
     created: Optional[str] = None
     updated: Optional[str] = None
     last_comment: Optional[str] = None
+    comments: Optional[List[str]] = None
     
     @classmethod
-    def from_youtrack_data(cls, issue_data: Dict[str, Any]) -> 'Issue':
+    def from_youtrack_data(cls, issue_data: Dict[str, Any], num_comments: int = 1) -> 'Issue':
         """Crea una Issue desde los datos de YouTrack"""
         extracted = cls(
             id=issue_data["id"],
@@ -55,21 +56,31 @@ class Issue:
             elif field_name == "Priority" and field_value:
                 extracted.priority = field_value.get("name")
         
-        # Extraer último comentario
-        comments = issue_data.get("comments", [])
-        if comments:
+        # Extraer comentarios
+        comments_data = issue_data.get("comments", [])
+        if comments_data:
             # Ordenar comentarios por fecha de creación (más reciente primero)
-            sorted_comments = sorted(comments, key=lambda x: x.get("created", 0), reverse=True)
-            latest_comment = sorted_comments[0]
+            sorted_comments = sorted(comments_data, key=lambda x: x.get("created", 0), reverse=True)
             
-            # Formatear el comentario
-            comment_text = latest_comment.get("text", "").strip()
-            author_name = latest_comment.get("author", {}).get("name", "Desconocido")
-            comment_created = latest_comment.get("created")
-            elapsed = _calculate_time_elapsed(comment_created) if comment_created else "Desconocido"
-
+            # Obtener los últimos X comentarios
+            selected_comments = sorted_comments[:num_comments]
+            
+            # Formatear los comentarios
+            formatted_comments = []
+            for comment in selected_comments:
+                comment_text = comment.get("text", "").strip()
+                author_name = comment.get("author", {}).get("name", "Desconocido")
+                comment_created = comment.get("created")
+                elapsed = _calculate_time_elapsed(comment_created) if comment_created else "Desconocido"
                 
-            extracted.last_comment = f"{author_name}: {comment_text} ({elapsed})" if comment_text else None
+                if comment_text:
+                    formatted_comments.append(f"{author_name}: {comment_text} ({elapsed})")
+            
+            # Asignar comentarios
+            extracted.comments = formatted_comments if formatted_comments else None
+            
+            # Mantener compatibilidad con last_comment (el más reciente)
+            extracted.last_comment = formatted_comments[0] if formatted_comments else None
         
         return extracted
     

@@ -20,12 +20,13 @@ client = None
 
 
 @mcp.tool()
-def getTasksInformation(name: str) -> str:
+def getTasksInformation(name: str, num_comments: int = 1) -> str:
     """
     Read the Agile Panel from Youtrack, obtaining information about all the tasks and returns a markdown detailing it.
 
     Args:
         name (str): The name of the board to which the tasks belong.
+        num_comments (int): Number of latest comments to retrieve per task (default: 1).
 
     Returns:
         str: A string containing information about all tasks in markdown format.
@@ -34,6 +35,10 @@ def getTasksInformation(name: str) -> str:
     # Validar configuración
     if not config or not config.is_configured:
         return "❌ **Error de configuración**\n\nLas variables de entorno YOUTRACK_BASE_URL y YOUTRACK_API_TOKEN deben estar configuradas."
+    
+    # Validar parámetro num_comments
+    if num_comments < 0:
+        return "❌ **Error de parámetro**\n\nEl número de comentarios debe ser mayor o igual a 0."
     
     # Buscar tablero por nombre
     board, error = client.find_board_by_name(name)
@@ -45,7 +50,7 @@ def getTasksInformation(name: str) -> str:
         return f"⚠️ **Sin sprint activo**\n\nEl tablero '{board.name}' no tiene un sprint activo."
     
     # Obtener issues del sprint
-    issues, error = client.get_sprint_issues(board.id, board.current_sprint_id)
+    issues, error = client.get_sprint_issues(board.id, board.current_sprint_id, num_comments)
     if error:
         return f"❌ **Error al obtener tareas**\n\n{error}"
     
