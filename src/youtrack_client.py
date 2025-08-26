@@ -73,7 +73,7 @@ class YouTrackClient:
             Tuple[List[Issue], Optional[str]]: Lista de issues y error si existe
         """
         try:
-            fields = "id,summary,created,updated,resolved,customFields(id,name,value(name,email,presentation)),comments(text,created,author(name))"
+            fields = "id,summary,updated,customFields(name,value(name,presentation)),comments(text,created,author(name))"
             url = f"{self.config.base_url}/agiles/{board_id}/sprints/{sprint_id}/issues?fields={fields}"
             
             response = requests.get(url, headers=self.config.headers, timeout=self.config.timeout)
