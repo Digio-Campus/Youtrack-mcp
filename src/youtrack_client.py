@@ -126,3 +126,46 @@ class YouTrackClient:
             return None, error_msg
         
         return matching_boards[0], None
+
+    def get_issue_by_id(self, issue_id: str) -> Tuple[Optional[Issue], Optional[str]]:
+        """
+        Obtiene una issue específica por su ID con información detallada
+        
+        Args:
+            issue_id: ID de la issue a obtener
+            
+        Returns:
+            Tuple[Optional[Issue], Optional[str]]: Issue encontrada y error si existe
+        """
+        try:
+            # Campos detallados incluyendo todos los comentarios
+            fields = "id,summary,description,created,updated,resolved,customFields(id,name,value(name,email,presentation)),comments(text,created,author(name,email)),attachments(id,name,size,url)"
+            url = f"{self.config.base_url}/issues/{issue_id}?fields={fields}"
+            
+            response = requests.get(url, headers=self.config.headers, timeout=self.config.timeout)
+            response.raise_for_status()
+            
+            issue_data = response.json()
+            
+            # Usar todos los comentarios (no limitamos el número)
+            issue = Issue.from_youtrack_data(issue_data, num_comments=-1)  # -1 significa todos
+            
+            return issue, None
+            
+        except requests.exceptions.HTTPError as e:
+            if response.status_code == 404:
+                error_msg = f"No se encontró la issue con ID '{issue_id}'"
+            elif response.status_code == 403:
+                error_msg = f"Sin permisos para acceder a la issue '{issue_id}'"
+            else:
+                error_msg = f"Error HTTP al obtener issue {issue_id}: {str(e)}"
+            logger.error(error_msg)
+            return None, error_msg
+        except requests.exceptions.RequestException as e:
+            error_msg = f"Error al obtener issue {issue_id}: {str(e)}"
+            logger.error(error_msg)
+            return None, error_msg
+        except Exception as e:
+            error_msg = f"Error inesperado al obtener issue {issue_id}: {str(e)}"
+            logger.error(error_msg)
+            return None, error_msg

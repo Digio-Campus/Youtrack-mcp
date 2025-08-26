@@ -68,6 +68,48 @@ def getTasksInformation(name: str, num_comments: int = 1) -> str:
     # Generar el reporte en markdown
     return formatter.format_tasks_report(in_progress_issues)
 
+@mcp.tool()
+def getIssueById(issue_id: str) -> str:
+    """
+    Obtiene información detallada de una issue específica por su ID.
+    
+    Esta herramienta está diseñada para profundizar en issues problemáticas identificadas
+    previamente, proporcionando contexto completo incluyendo todos los comentarios,
+    descripción y metadatos para análisis por IA.
+
+    Args:
+        issue_id (str): El ID de la issue a analizar (ej: "PROJ-123").
+
+    Returns:
+        str: Información completa de la issue en formato markdown estructurado.
+    """
+    
+    # Validar configuración
+    if not config or not config.is_configured:
+        return "❌ **Error de configuración**\n\nLas variables de entorno YOUTRACK_BASE_URL y YOUTRACK_API_TOKEN deben estar configuradas."
+    
+    # Validar parámetro issue_id
+    if not issue_id or not issue_id.strip():
+        return "❌ **Error de parámetro**\n\nEl ID de la issue es requerido y no puede estar vacío."
+    
+    issue_id = issue_id.strip()
+    
+    # Obtener issue por ID
+    issue, error = client.get_issue_by_id(issue_id)
+    if error:
+        return f"❌ **Error al obtener issue**\n\n{error}"
+    
+    if not issue:
+        return f"❌ **Issue no encontrada**\n\nNo se pudo obtener la issue con ID '{issue_id}'. Verifica que el ID sea correcto y tengas permisos de acceso."
+    
+    # Log de la issue obtenida
+    logger.info(f"Issue obtenida: {issue.id} | {issue.summary}")
+    if issue.comments:
+        logger.info(f"Comentarios encontrados: {len(issue.comments)}")
+    
+    # Generar el reporte detallado en markdown
+    return formatter.format_single_issue(issue)
+
 
 def run_server(timeout: int = 30, finished_states: str = "Fixed,Verified"):
     """

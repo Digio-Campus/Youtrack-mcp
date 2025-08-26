@@ -20,6 +20,7 @@ class Issue:
     """Representa una issue de YouTrack con campos extraídos"""
     id: str
     summary: str
+    description: Optional[str] = None
     state: Optional[str] = None
     assignee: Optional[str] = None
     estimation: Optional[str] = None
@@ -35,6 +36,7 @@ class Issue:
         extracted = cls(
             id=issue_data["id"],
             summary=issue_data["summary"],
+            description=issue_data.get("description"),
             created=issue_data.get("created"),
             updated=issue_data.get("updated")
         )
@@ -61,8 +63,11 @@ class Issue:
             # Ordenar comentarios por fecha de creación (más reciente primero)
             sorted_comments = sorted(comments_data, key=lambda x: x.get("created", 0), reverse=True)
             
-            # Obtener los últimos X comentarios
-            selected_comments = sorted_comments[:num_comments]
+            # Obtener comentarios según num_comments (-1 = todos, >0 = límite)
+            if num_comments == -1:
+                selected_comments = sorted_comments  # Todos los comentarios
+            else:
+                selected_comments = sorted_comments[:num_comments]
             
             # Formatear los comentarios
             formatted_comments = []
