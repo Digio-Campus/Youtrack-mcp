@@ -139,7 +139,7 @@ class YouTrackClient:
         """
         try:
             # Campos completos para análisis detallado - incluimos todo lo disponible
-            fields = "id,summary,description,created,updated,resolved,reporter(name,email),updater(name,email),customFields(id,name,value,type,$type),comments(text,created,updated,author(name,email)),attachments(id,name,size,url,mimeType),links(direction,linkType(name),issues(id,summary)),tags(name),votes,watchers(hasStar),visibility(type,permittedGroups(name),permittedUsers(name))"
+            fields = "id,idReadable,summary,description,created,updated,resolved,reporter(name,email),updater(name,email),customFields(id,name,value,type,$type),comments(text,created,updated,author(name,email)),attachments(id,name,size,url,mimeType),links(direction,linkType(name),issues(id,summary)),tags(name),votes,watchers(hasStar),visibility(type,permittedGroups(name),permittedUsers(name))"
             url = f"{self.config.base_url}/issues/{issue_id}?fields={fields}"
             
             response = requests.get(url, headers=self.config.headers, timeout=self.config.timeout)
