@@ -19,6 +19,7 @@ class Board:
 class Issue:
     """Representa una issue de YouTrack con campos extraídos"""
     id: str
+    idReadable: str
     summary: str
     state: Optional[str] = None
     assignee: Optional[str] = None
@@ -35,6 +36,7 @@ class Issue:
         """Crea una Issue desde los datos de YouTrack"""
         extracted = cls(
             id=issue_data["id"],
+            idReadable=issue_data["idReadable"],
             summary=issue_data["summary"],
             updated=issue_data.get("updated"),
             raw_data=issue_data  # Guardamos todos los datos originales

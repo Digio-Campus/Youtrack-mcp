@@ -25,8 +25,8 @@ class MarkdownFormatter:
 
         # Generar reporte principal
         md = "# Tareas en curso\n\n"
-        md += "| ID | Título | Responsable | Estado | Estimación | Tiempo gastado | Última actualización | Comentarios |\n"
-        md += "|-----|--------|------------|---------|------------|----------------|---------------------|-------------|\n"
+        md += "| Internal ID - User Id | Título | Responsable | Estado | Estimación | Tiempo gastado | Última actualización | Comentarios |\n"
+        md += "|-----------------------|--------|------------|---------|------------|----------------|----------------------|-------------|\n"
 
 
         for task in issues:
@@ -46,7 +46,7 @@ class MarkdownFormatter:
             else:
                 comments_text = "Sin comentarios"
 
-            md += f"| {task.id} | {task.summary} | {assignee_name} | {state} | {estimation} | {spent} | {time_elapsed} | {comments_text} |\n"
+            md += f"| {task.id} - {task.idReadable} | {task.summary} | {assignee_name} | {state} | {estimation} | {spent} | {time_elapsed} | {comments_text} |\n"
 
         return md
 
