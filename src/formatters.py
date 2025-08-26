@@ -36,7 +36,7 @@ class MarkdownFormatter:
             state = task.state or "Sin estado"
             time_elapsed = _calculate_time_elapsed(task.updated) if task.updated else "Desconocido"
             
-            # Usar múltiples comentarios si están disponibles, sino usar last_comment
+            # Formatear comentarios
             if task.comments and len(task.comments) > 0:
                 if len(task.comments) == 1:
                     comments_text = task.comments[0]
@@ -44,7 +44,7 @@ class MarkdownFormatter:
                     # Para múltiples comentarios, mostrarlos en líneas separadas
                     comments_text = "<br>".join(task.comments)
             else:
-                comments_text = task.last_comment or "Sin comentarios"
+                comments_text = "Sin comentarios"
 
             md += f"| {task.id} | {task.summary} | {assignee_name} | {state} | {estimation} | {spent} | {time_elapsed} | {comments_text} |\n"
 

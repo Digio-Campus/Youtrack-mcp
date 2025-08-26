@@ -27,7 +27,6 @@ class Issue:
     priority: Optional[str] = None
     created: Optional[str] = None
     updated: Optional[str] = None
-    last_comment: Optional[str] = None
     comments: Optional[List[str]] = None
     
     @classmethod
@@ -78,9 +77,6 @@ class Issue:
             
             # Asignar comentarios
             extracted.comments = formatted_comments if formatted_comments else None
-            
-            # Mantener compatibilidad con last_comment (el más reciente)
-            extracted.last_comment = formatted_comments[0] if formatted_comments else None
         
         return extracted
     
