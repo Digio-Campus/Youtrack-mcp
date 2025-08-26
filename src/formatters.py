@@ -63,7 +63,7 @@ class MarkdownFormatter:
         """
         md = f"# Issue {issue.id}: {issue.summary}\n\n"
         
-        # Información básica estructurada
+        # Información básica del modelo
         md += "## Información Básica\n\n"
         md += "| Campo | Valor |\n"
         md += "|-------|-------|\n"
@@ -71,115 +71,19 @@ class MarkdownFormatter:
         md += f"| **Título** | {issue.summary} |\n"
         md += f"| **Estado** | {issue.state or 'Sin estado'} |\n"
         md += f"| **Asignado a** | {issue.assignee or 'Sin asignar'} |\n"
-        md += f"| **Prioridad** | {issue.priority or 'Sin prioridad'} |\n"
         md += f"| **Estimación** | {issue.estimation or 'Sin estimación'} |\n"
         md += f"| **Tiempo gastado** | {issue.spent or 'Sin tiempo registrado'} |\n"
         
-        # Fechas con tiempo transcurrido
-        if issue.created:
-            created_elapsed = _calculate_time_elapsed(issue.created)
-            md += f"| **Creada** | {created_elapsed} |\n"
-        else:
-            md += "| **Creada** | Fecha desconocida |\n"
-            
         if issue.updated:
             updated_elapsed = _calculate_time_elapsed(issue.updated)
             md += f"| **Última actualización** | {updated_elapsed} |\n"
-        else:
-            md += "| **Última actualización** | Fecha desconocida |\n"
-            
-        if issue.resolved:
-            resolved_elapsed = _calculate_time_elapsed(issue.resolved)
-            md += f"| **Resuelta** | {resolved_elapsed} |\n"
         
         md += "\n"
         
-        # Información adicional desde raw_data
-        if issue.raw_data:
-            raw = issue.raw_data
-            
-            # Reporter y Updater
-            if raw.get("reporter"):
-                reporter_name = raw["reporter"].get("name", "Desconocido")
-                md += f"| **Reportada por** | {reporter_name} |\n"
-            
-            if raw.get("updater"):
-                updater_name = raw["updater"].get("name", "Desconocido")
-                md += f"| **Última actualización por** | {updater_name} |\n"
-                
-            # Votos y watchers
-            if raw.get("votes") is not None:
-                md += f"| **Votos** | {raw['votes']} |\n"
-                
-            if raw.get("watchers"):
-                has_star = raw["watchers"].get("hasStar", False)
-                md += f"| **Marcada como favorita** | {'Sí' if has_star else 'No'} |\n"
-        
-        md += "\n"
-        
-        # Descripción si existe
-        if issue.description and issue.description.strip():
-            md += "## Descripción\n\n"
-            md += f"{issue.description.strip()}\n\n"
-        
-        # TODOS los Custom Fields
-        if issue.all_custom_fields and len(issue.all_custom_fields) > 0:
-            md += f"## Campos Personalizados ({len(issue.all_custom_fields)} total)\n\n"
-            md += "| Campo | Valor | Tipo | ID |\n"
-            md += "|-------|-------|------|----|\n"
-            
-            for field in issue.all_custom_fields:
-                field_name = field.get("name", "Sin nombre")
-                field_value = "Sin valor"
-                field_type = field.get("type", field.get("$type", "Desconocido"))
-                field_id = field.get("id", "Sin ID")
-                
-                # Lógica simple: intentar obtener el valor string directamente
-                if field.get("value"):
-                    value_data = field["value"]
-                    
-                    if isinstance(value_data, dict):
-                        # Prioridad: name > presentation > cualquier otro campo string
-                        if "name" in value_data and value_data["name"]:
-                            field_value = str(value_data["name"])
-                        elif "presentation" in value_data and value_data["presentation"]:
-                            field_value = str(value_data["presentation"])
-                        else:
-                            # Si no hay name ni presentation, buscar cualquier valor string útil
-                            for key, val in value_data.items():
-                                if not key.startswith('$') and val and isinstance(val, (str, int, float)):
-                                    field_value = str(val)
-                                    break
-                    elif isinstance(value_data, list):
-                        # Para arrays, intentar obtener los nombres/valores
-                        if value_data:
-                            names = []
-                            for item in value_data:
-                                if isinstance(item, dict):
-                                    if "name" in item and item["name"]:
-                                        names.append(str(item["name"]))
-                                    elif "presentation" in item and item["presentation"]:
-                                        names.append(str(item["presentation"]))
-                                else:
-                                    names.append(str(item))
-                            field_value = ", ".join(names) if names else "Lista vacía"
-                        else:
-                            field_value = "Lista vacía"
-                    else:
-                        # Valor primitivo directo
-                        field_value = str(value_data)
-                
-                md += f"| {field_name} | {field_value} | {field_type} | {field_id} |\n"
-            
-            md += "\n"
-        
-        # Comentarios detallados
+        # Comentarios
         if issue.comments and len(issue.comments) > 0:
             md += f"## Comentarios ({len(issue.comments)} total)\n\n"
-            
-            # Revertir orden para mostrar desde el más antiguo al más reciente (cronológico)
             chronological_comments = list(reversed(issue.comments))
-            
             for i, comment in enumerate(chronological_comments, 1):
                 md += f"### Comentario {i}\n"
                 md += f"{comment}\n\n"
@@ -187,94 +91,73 @@ class MarkdownFormatter:
             md += "## Comentarios\n\n"
             md += "No hay comentarios disponibles.\n\n"
         
-        # Información adicional desde raw_data
+        # Datos completos del raw_data
         if issue.raw_data:
-            raw = issue.raw_data
-            
-            # Tags
-            if raw.get("tags") and len(raw["tags"]) > 0:
-                md += "## Tags\n\n"
-                tag_names = [tag.get("name", "Sin nombre") for tag in raw["tags"]]
-                md += f"- {', '.join(tag_names)}\n\n"
-            
-            # Attachments
-            if raw.get("attachments") and len(raw["attachments"]) > 0:
-                md += f"## Archivos Adjuntos ({len(raw['attachments'])} total)\n\n"
-                md += "| Nombre | Tamaño | Tipo | URL |\n"
-                md += "|--------|--------|------|-----|\n"
-                
-                for attachment in raw["attachments"]:
-                    name = attachment.get("name", "Sin nombre")
-                    size = attachment.get("size", "Desconocido")
-                    mime_type = attachment.get("mimeType", "Desconocido")
-                    url = attachment.get("url", "Sin URL")
-                    
-                    md += f"| {name} | {size} bytes | {mime_type} | {url} |\n"
-                
-                md += "\n"
-            
-            # Links a otras issues
-            if raw.get("links") and len(raw["links"]) > 0:
-                md += f"## Enlaces a otras Issues ({len(raw['links'])} total)\n\n"
-                
-                for link in raw["links"]:
-                    direction = link.get("direction", "Desconocido")
-                    link_type = link.get("linkType", {}).get("name", "Desconocido")
-                    
-                    if link.get("issues"):
-                        for linked_issue in link["issues"]:
-                            issue_id = linked_issue.get("id", "Sin ID")
-                            issue_summary = linked_issue.get("summary", "Sin título")
-                            md += f"- **{direction}** ({link_type}): {issue_id} - {issue_summary}\n"
-                
-                md += "\n"
-            
-            # Visibility/Permisos
-            if raw.get("visibility"):
-                visibility = raw["visibility"]
-                md += "## Visibilidad y Permisos\n\n"
-                md += f"- **Tipo**: {visibility.get('type', 'Desconocido')}\n"
-                
-                if visibility.get("permittedGroups"):
-                    groups = [g.get("name", "Sin nombre") for g in visibility["permittedGroups"]]
-                    md += f"- **Grupos permitidos**: {', '.join(groups)}\n"
-                
-                if visibility.get("permittedUsers"):
-                    users = [u.get("name", "Sin nombre") for u in visibility["permittedUsers"]]
-                    md += f"- **Usuarios permitidos**: {', '.join(users)}\n"
-                
-                md += "\n"
-        
-        # Resumen para IA
-        md += "## Resumen para Análisis\n\n"
-        md += "**Puntos clave a considerar:**\n"
-        md += f"- Issue ID: {issue.id}\n"
-        md += f"- Estado actual: {issue.state or 'Sin estado'}\n"
-        md += f"- Responsable: {issue.assignee or 'Sin asignar'}\n"
-        
-        if issue.comments:
-            md += f"- Total de comentarios: {len(issue.comments)}\n"
-            md += "- Actividad de comentarios disponible para análisis temporal\n"
-        else:
-            md += "- Sin actividad de comentarios registrada\n"
-            
-        if issue.estimation and issue.spent:
-            md += f"- Estimación vs tiempo real: {issue.estimation} / {issue.spent}\n"
-        elif issue.estimation:
-            md += f"- Estimación sin tiempo registrado: {issue.estimation}\n"
-        elif issue.spent:
-            md += f"- Tiempo gastado sin estimación inicial: {issue.spent}\n"
-        
-        if issue.all_custom_fields:
-            md += f"- Total de campos personalizados: {len(issue.all_custom_fields)}\n"
-            
-        if issue.raw_data:
-            raw = issue.raw_data
-            if raw.get("attachments"):
-                md += f"- Archivos adjuntos: {len(raw['attachments'])}\n"
-            if raw.get("links"):
-                md += f"- Enlaces a otras issues: {len(raw['links'])}\n"
-            if raw.get("tags"):
-                md += f"- Tags: {len(raw['tags'])}\n"
+            md += MarkdownFormatter._format_raw_data_section(issue.raw_data)
         
         return md
+
+    @staticmethod
+    def _format_raw_data_section(raw_data: dict) -> str:
+        """
+        Formatea recursivamente todos los datos del raw_data de forma genérica
+        
+        Args:
+            raw_data: Diccionario con todos los datos de la API
+            
+        Returns:
+            str: Sección markdown con todos los datos
+        """
+        md = "## Datos Completos de la API\n\n"
+        
+        # Recorrer todos los campos del raw_data
+        for field_name, field_value in raw_data.items():
+            if field_name.startswith('$'):
+                continue  # Saltar metadatos de la API
+                
+            md += f"### {field_name.replace('_', ' ').title()}\n\n"
+            md += MarkdownFormatter._format_field_value(field_value)
+            md += "\n"
+        
+        return md
+    
+    @staticmethod
+    def _format_field_value(value, indent_level: int = 0) -> str:
+        """
+        Formatea cualquier tipo de valor de forma recursiva
+        
+        Args:
+            value: Valor a formatear
+            indent_level: Nivel de indentación para estructuras anidadas
+            
+        Returns:
+            str: Valor formateado en markdown
+        """
+        indent = "  " * indent_level
+        
+        if value is None:
+            return f"{indent}- Sin valor\n"
+        elif isinstance(value, dict):
+            if not value:
+                return f"{indent}- Objeto vacío\n"
+            
+            result = ""
+            for key, val in value.items():
+                if key.startswith('$'):
+                    continue
+                clean_key = key.replace('_', ' ').title()
+                result += f"{indent}- **{clean_key}**:\n"
+                result += MarkdownFormatter._format_field_value(val, indent_level + 1)
+            return result
+        elif isinstance(value, list):
+            if not value:
+                return f"{indent}- Lista vacía\n"
+            
+            result = ""
+            for i, item in enumerate(value):
+                result += f"{indent}- **Item {i+1}**:\n"
+                result += MarkdownFormatter._format_field_value(item, indent_level + 1)
+            return result
+        else:
+            # Valor primitivo (str, int, float, bool)
+            return f"{indent}- {str(value)}\n"
