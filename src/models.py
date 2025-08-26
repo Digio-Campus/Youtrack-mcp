@@ -20,19 +20,14 @@ class Issue:
     """Representa una issue de YouTrack con campos extraídos"""
     id: str
     summary: str
-    description: Optional[str] = None
     state: Optional[str] = None
     assignee: Optional[str] = None
     estimation: Optional[str] = None
     spent: Optional[str] = None
-    priority: Optional[str] = None
-    created: Optional[str] = None
     updated: Optional[str] = None
     comments: Optional[List[str]] = None
-    
-    # Campos adicionales para análisis detallado
-    resolved: Optional[str] = None
-    all_custom_fields: Optional[List[Dict[str, Any]]] = None
+
+    # Toda la información para el análisis detallado
     raw_data: Optional[Dict[str, Any]] = None  # Para guardar datos adicionales
     
     @classmethod
@@ -41,27 +36,13 @@ class Issue:
         extracted = cls(
             id=issue_data["id"],
             summary=issue_data["summary"],
-            description=issue_data.get("description"),
-            created=issue_data.get("created"),
             updated=issue_data.get("updated"),
             resolved=issue_data.get("resolved"),
             raw_data=issue_data  # Guardamos todos los datos originales
         )
-        
-        # Extraer TODOS los custom fields como array
+
+        # Extracción específica de custom fields
         custom_fields_data = issue_data.get("customFields", [])
-        if custom_fields_data:
-            extracted.all_custom_fields = []
-            for field in custom_fields_data:
-                field_info = {
-                    "id": field.get("id"),
-                    "name": field.get("name"),
-                    "value": field.get("value"),
-                    "type": field.get("$type")  # Tipo del campo si está disponible
-                }
-                extracted.all_custom_fields.append(field_info)
-        
-        # Mantener extracción específica para compatibilidad con otros métodos
         for field in custom_fields_data:
             field_name = field["name"]
             field_value = field.get("value")
@@ -74,8 +55,6 @@ class Issue:
                 extracted.estimation = field_value.get("presentation")
             elif field_name == "Spent time" and field_value:
                 extracted.spent = field_value.get("presentation")
-            elif field_name == "Priority" and field_value:
-                extracted.priority = field_value.get("name")
         
         # Extraer comentarios
         comments_data = issue_data.get("comments", [])
