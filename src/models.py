@@ -110,6 +110,11 @@ class ExtendedIssue(Issue):
     updater_name: Optional[str] = None  # Nombre del updater extraído
     wikifiedDescription: Optional[str] = None
     
+    # Custom fields adicionales (más allá de los que ya procesa Issue)
+    priority: Optional[str] = None  # Priority custom field
+    type: Optional[str] = None  # Type custom field
+    subsystem: Optional[str] = None  # Subsystem custom field
+    
     @classmethod
     def get_api_fields(cls) -> str:
         """Devuelve los campos completos necesarios para análisis detallado"""
@@ -136,6 +141,23 @@ class ExtendedIssue(Issue):
         """Crea una ExtendedIssue desde los datos completos de YouTrack"""
         # Primero creamos la issue básica
         basic_issue = super().from_youtrack_data(issue_data, num_comments)
+        
+        # Procesamos custom fields adicionales (más allá de los que ya procesa Issue)
+        custom_fields_data = issue_data.get("customFields", [])
+        priority = None
+        issue_type = None
+        subsystem = None
+        
+        for field in custom_fields_data:
+            field_name = field["name"]
+            field_value = field.get("value")
+            
+            if field_name == "Priority" and field_value:
+                priority = field_value.get("name")
+            elif field_name == "Type" and field_value:
+                issue_type = field_value.get("name")
+            elif field_name == "Subsystem" and field_value:
+                subsystem = field_value.get("name")
         
         # Procesamos los campos específicos de ExtendedIssue
         # Attachments: extraer solo nombres
@@ -217,7 +239,12 @@ class ExtendedIssue(Issue):
             subtasks=subtasks_processed,
             tags=tags_processed,
             updater_name=updater_name,
-            wikifiedDescription=issue_data.get("wikifiedDescription")
+            wikifiedDescription=issue_data.get("wikifiedDescription"),
+            
+            # Custom fields adicionales
+            priority=priority,
+            type=issue_type,
+            subsystem=subsystem
         )
         
         return extended
