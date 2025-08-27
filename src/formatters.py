@@ -2,7 +2,7 @@
 Formateadores para generar salidas en diferentes formatos
 """
 from typing import List, Dict, Any
-from .models import Issue
+from .models import Issue, ExtendedIssue
 from .utils import _calculate_time_elapsed
 
 
@@ -51,113 +51,106 @@ class MarkdownFormatter:
         return md
 
     @staticmethod
-    def format_single_issue(issue: Issue) -> str:
+    def format_extended_issue(issue: ExtendedIssue) -> str:
         """
-        Genera un reporte completo y detallado en markdown de una issue específica
+        Formatea una ExtendedIssue para análisis por IA de manera optimizada
         
         Args:
-            issue: Issue a formatear
+            issue: ExtendedIssue a formatear
             
         Returns:
-            str: Reporte detallado en formato markdown optimizado para IA
+            str: Información completa en formato markdown optimizado para IA
         """
-        md = f"# Issue {issue.id}: {issue.summary}\n\n"
         
-        # Información básica del modelo
-        md += "## Información Básica\n\n"
+        # Encabezado principal
+        md = f"# Issue {issue.idReadable}: {issue.summary}\n\n"
+        
+        # Información básica en tabla estructurada
+        md += "## 📋 Información Básica\n\n"
         md += "| Campo | Valor |\n"
         md += "|-------|-------|\n"
-        md += f"| **ID** | {issue.id} |\n"
+        md += f"| **ID Interno** | {issue.id} |\n"
+        md += f"| **ID Legible** | {issue.idReadable} |\n"
         md += f"| **Título** | {issue.summary} |\n"
         md += f"| **Estado** | {issue.state or 'Sin estado'} |\n"
-        md += f"| **Asignado a** | {issue.assignee or 'Sin asignar'} |\n"
-        md += f"| **Estimación** | {issue.estimation or 'Sin estimación'} |\n"
-        md += f"| **Tiempo gastado** | {issue.spent or 'Sin tiempo registrado'} |\n"
+        md += f"| **Prioridad** | {issue.priority or 'Sin prioridad'} |\n"
+        md += f"| **Tipo** | {issue.type or 'Sin tipo'} |\n"
+        md += f"| **Subsistema** | {issue.subsystem or 'Sin subsistema'} |\n"
+        md += f"| **Responsable** | {issue.assignee or 'Sin asignar'} |\n"
+        md += f"| **Proyecto** | {issue.project_name or 'Sin proyecto'} |\n"
         
+        # Información temporal
+        md += "\n## ⏰ Información Temporal\n\n"
+        md += "| Campo | Valor |\n"
+        md += "|-------|-------|\n"
+        
+        if issue.created:
+            created_elapsed = _calculate_time_elapsed(issue.created)
+            md += f"| **Creado** | {created_elapsed} |\n"
+        else:
+            md += f"| **Creado** | Fecha desconocida |\n"
+            
         if issue.updated:
             updated_elapsed = _calculate_time_elapsed(issue.updated)
             md += f"| **Última actualización** | {updated_elapsed} |\n"
+        else:
+            md += f"| **Última actualización** | Fecha desconocida |\n"
+            
+        md += f"| **Estimación** | {issue.estimation or 'Sin estimación'} |\n"
+        md += f"| **Tiempo gastado** | {issue.spent or 'Sin tiempo registrado'} |\n"
         
-        md += "\n"
+        # Personas involucradas
+        md += "\n## 👥 Personas Involucradas\n\n"
+        md += "| Rol | Persona |\n"
+        md += "|-----|----------|\n"
+        md += f"| **Reporter** | {issue.reporter_name or 'Desconocido'} |\n"
+        md += f"| **Responsable** | {issue.assignee or 'Sin asignar'} |\n"
+        md += f"| **Último editor** | {issue.updater_name or 'Desconocido'} |\n"
+        
+        # Descripción
+        if issue.wikifiedDescription:
+            md += "\n## 📝 Descripción\n\n"
+            md += f"{issue.wikifiedDescription}\n\n"
         
         # Comentarios
-        if issue.comments and len(issue.comments) > 0:
-            md += f"## Comentarios ({len(issue.comments)} total)\n\n"
-            chronological_comments = list(reversed(issue.comments))
-            for i, comment in enumerate(chronological_comments, 1):
-                md += f"### Comentario {i}\n"
-                md += f"{comment}\n\n"
+        if issue.comments:
+            md += f"\n## 💬 Comentarios ({len(issue.comments)})\n\n"
+            for i, comment in enumerate(issue.comments, 1):
+                md += f"**Comentario {i}:** {comment}\n\n"
         else:
-            md += "## Comentarios\n\n"
-            md += "No hay comentarios disponibles.\n\n"
+            md += "\n## 💬 Comentarios\n\nSin comentarios.\n\n"
         
-        # Datos completos del raw_data
-        if issue.raw_data:
-            md += MarkdownFormatter._format_raw_data_section(issue.raw_data)
-        
-        return md
-
-    @staticmethod
-    def _format_raw_data_section(raw_data: dict) -> str:
-        """
-        Formatea recursivamente todos los datos del raw_data de forma genérica
-        
-        Args:
-            raw_data: Diccionario con todos los datos de la API
+        # Relaciones (parent, subtasks, links)
+        has_relations = issue.parent or issue.subtasks or issue.links
+        if has_relations:
+            md += "\n## 🔗 Relaciones\n\n"
             
-        Returns:
-            str: Sección markdown con todos los datos
-        """
-        md = "## Datos Completos de la API\n\n"
+            if issue.parent:
+                md += f"**Issue padre:** {issue.parent}\n\n"
+            
+            if issue.subtasks:
+                md += f"**Subtareas ({len(issue.subtasks)}):**\n"
+                for subtask in issue.subtasks:
+                    md += f"- {subtask}\n"
+                md += "\n"
+            
+            if issue.links:
+                md += f"**Enlaces ({len(issue.links)}):**\n"
+                for link in issue.links:
+                    md += f"- {link}\n"
+                md += "\n"
         
-        # Recorrer todos los campos del raw_data
-        for field_name, field_value in raw_data.items():
-            if field_name.startswith('$'):
-                continue  # Saltar metadatos de la API
-                
-            md += f"### {field_name.replace('_', ' ').title()}\n\n"
-            md += MarkdownFormatter._format_field_value(field_value)
+        # Archivos adjuntos
+        if issue.attachments:
+            md += f"\n## 📎 Archivos Adjuntos ({len(issue.attachments)})\n\n"
+            for attachment in issue.attachments:
+                md += f"- {attachment}\n"
             md += "\n"
         
+        # Tags
+        if issue.tags:
+            md += f"\n## 🏷️ Tags\n\n"
+            tags_text = ", ".join(issue.tags)
+            md += f"{tags_text}\n\n"
+        
         return md
-    
-    @staticmethod
-    def _format_field_value(value, indent_level: int = 0) -> str:
-        """
-        Formatea cualquier tipo de valor de forma recursiva
-        
-        Args:
-            value: Valor a formatear
-            indent_level: Nivel de indentación para estructuras anidadas
-            
-        Returns:
-            str: Valor formateado en markdown
-        """
-        indent = "  " * indent_level
-        
-        if value is None:
-            return f"{indent}- Sin valor\n"
-        elif isinstance(value, dict):
-            if not value:
-                return f"{indent}- Objeto vacío\n"
-            
-            result = ""
-            for key, val in value.items():
-                if key.startswith('$'):
-                    continue
-                clean_key = key.replace('_', ' ').title()
-                result += f"{indent}- **{clean_key}**:\n"
-                result += MarkdownFormatter._format_field_value(val, indent_level + 1)
-            return result
-        elif isinstance(value, list):
-            if not value:
-                return f"{indent}- Lista vacía\n"
-            
-            result = ""
-            for i, item in enumerate(value):
-                result += f"{indent}- **Item {i+1}**:\n"
-                result += MarkdownFormatter._format_field_value(item, indent_level + 1)
-            return result
-        else:
-            # Valor primitivo (str, int, float, bool)
-            return f"{indent}- {str(value)}\n"

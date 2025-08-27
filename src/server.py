@@ -108,7 +108,7 @@ def getIssueById(issue_id: str) -> str:
         logger.info(f"Comentarios encontrados: {len(issue.comments)}")
     
     # Generar el reporte detallado en markdown
-    return formatter.format_single_issue(issue)
+    return formatter.format_extended_issue(issue)
 
 
 def run_server(timeout: int = 30, finished_states: str = "Fixed,Verified"):
