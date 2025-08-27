@@ -98,16 +98,16 @@ class Issue:
 @dataclass
 class ExtendedIssue(Issue):
     """Representa una issue de YouTrack con información completa para análisis detallado"""
-    # Campos solicitados en get_api_fields
-    attachments: Optional[List[Dict[str, Any]]] = None  
-    created: Optional[str] = None
-    links: Optional[List[Dict[str, Any]]] = None  
-    parent: Optional[Dict[str, Any]] = None  
-    project: Optional[Dict[str, Any]] = None  
-    reporter: Optional[Dict[str, Any]] = None  
-    subtasks: Optional[List[Dict[str, Any]]] = None  
-    tags: Optional[List[Dict[str, Any]]] = None  
-    updater: Optional[Dict[str, Any]] = None  
+    # Campos procesados (ya extraídos para fácil acceso)
+    attachments: Optional[List[str]] = None  # Lista de nombres de archivos
+    created: Optional[str] = None  # Timestamp como string
+    links: Optional[List[str]] = None  # Descripciones de enlaces procesadas
+    parent: Optional[str] = None  # Descripción del padre procesada
+    project_name: Optional[str] = None  # Nombre del proyecto extraído
+    reporter_name: Optional[str] = None  # Nombre del reporter extraído
+    subtasks: Optional[List[str]] = None  # Descripciones de subtasks procesadas
+    tags: Optional[List[str]] = None  # Lista de nombres de tags
+    updater_name: Optional[str] = None  # Nombre del updater extraído
     wikifiedDescription: Optional[str] = None
     
     @classmethod
@@ -137,7 +137,64 @@ class ExtendedIssue(Issue):
         # Primero creamos la issue básica
         basic_issue = super().from_youtrack_data(issue_data, num_comments)
         
-        # Convertimos a ExtendedIssue agregando solo los campos que realmente solicitamos
+        # Procesamos los campos específicos de ExtendedIssue
+        # Attachments: extraer solo nombres
+        attachments_processed = None
+        if issue_data.get("attachments"):
+            attachments_processed = [att.get("name", "Sin nombre") for att in issue_data["attachments"]]
+        
+        # Links: formatear enlaces de forma legible
+        links_processed = None
+        if issue_data.get("links"):
+            links_processed = []
+            for link in issue_data["links"]:
+                direction = link.get("direction", "")
+                link_type = link.get("linkType", {}).get("name", "relacionado")
+                issues = link.get("issues", [])
+                
+                if issues:
+                    issues_desc = ", ".join([f"{issue.get('idReadable', issue.get('id', '?'))}: {issue.get('summary', 'Sin título')}" for issue in issues])
+                    links_processed.append(f"{direction} {link_type} → {issues_desc}")
+        
+        # Parent: formatear información del padre
+        parent_processed = None
+        if issue_data.get("parent"):
+            parent_issues = issue_data["parent"].get("issues", [])
+            if parent_issues:
+                parent_issue = parent_issues[0]  # Tomamos el primer padre
+                parent_processed = f"{parent_issue.get('idReadable', parent_issue.get('id', '?'))}: {parent_issue.get('summary', 'Sin título')}"
+        
+        # Subtasks: formatear subtareas
+        subtasks_processed = None
+        if issue_data.get("subtasks"):
+            subtasks_processed = []
+            for subtask in issue_data["subtasks"]:
+                subtask_issues = subtask.get("issues", [])
+                for issue in subtask_issues:
+                    resolved_status = " (RESUELTO)" if issue.get("resolved") else ""
+                    subtasks_processed.append(f"{issue.get('idReadable', issue.get('id', '?'))}: {issue.get('summary', 'Sin título')}{resolved_status}")
+        
+        # Project: extraer nombre
+        project_name = None
+        if issue_data.get("project"):
+            project_name = issue_data["project"].get("name")
+        
+        # Reporter: extraer nombre
+        reporter_name = None
+        if issue_data.get("reporter"):
+            reporter_name = issue_data["reporter"].get("name")
+        
+        # Updater: extraer nombre
+        updater_name = None
+        if issue_data.get("updater"):
+            updater_name = issue_data["updater"].get("name")
+        
+        # Tags: extraer nombres
+        tags_processed = None
+        if issue_data.get("tags"):
+            tags_processed = [tag.get("name") for tag in issue_data["tags"] if tag.get("name")]
+        
+        # Crear ExtendedIssue con datos procesados
         extended = cls(
             # Campos heredados de Issue
             id=basic_issue.id,
@@ -150,16 +207,16 @@ class ExtendedIssue(Issue):
             updated=basic_issue.updated,
             comments=basic_issue.comments,
             
-            # Campos específicos de ExtendedIssue (solo los que pedimos en API)
-            attachments=issue_data.get("attachments"),
+            # Campos específicos de ExtendedIssue (procesados)
+            attachments=attachments_processed,
             created=issue_data.get("created"),
-            links=issue_data.get("links"),
-            parent=issue_data.get("parent"),
-            project=issue_data.get("project"),
-            reporter=issue_data.get("reporter"),
-            subtasks=issue_data.get("subtasks"),
-            tags=issue_data.get("tags"),
-            updater=issue_data.get("updater"),
+            links=links_processed,
+            parent=parent_processed,
+            project_name=project_name,
+            reporter_name=reporter_name,
+            subtasks=subtasks_processed,
+            tags=tags_processed,
+            updater_name=updater_name,
             wikifiedDescription=issue_data.get("wikifiedDescription")
         )
         
