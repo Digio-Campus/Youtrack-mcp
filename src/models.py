@@ -27,9 +27,11 @@ class Issue:
     spent: Optional[str] = None
     updated: Optional[str] = None
     comments: Optional[List[str]] = None
-
-    # Toda la información para el análisis detallado
-    raw_data: Optional[Dict[str, Any]] = None  # Para guardar datos adicionales
+    
+    @classmethod
+    def get_api_fields(cls) -> str:
+        """Devuelve los campos necesarios para consultas básicas de Issue"""
+        return "id,idReadable,summary,updated,customFields(name,value),comments(author(name),text,created)"
     
     @classmethod
     def from_youtrack_data(cls, issue_data: Dict[str, Any], num_comments: int = 1) -> 'Issue':
@@ -38,8 +40,7 @@ class Issue:
             id=issue_data["id"],
             idReadable=issue_data["idReadable"],
             summary=issue_data["summary"],
-            updated=issue_data.get("updated"),
-            raw_data=issue_data  # Guardamos todos los datos originales
+            updated=issue_data.get("updated")
         )
 
         # Extracción específica de custom fields
@@ -93,3 +94,73 @@ class Issue:
             finished_states: Lista de estados considerados como terminados
         """
         return self.state in finished_states
+
+@dataclass
+class ExtendedIssue(Issue):
+    """Representa una issue de YouTrack con información completa para análisis detallado"""
+    # Campos solicitados en get_api_fields
+    attachments: Optional[List[Dict[str, Any]]] = None  
+    created: Optional[str] = None
+    links: Optional[List[Dict[str, Any]]] = None  
+    parent: Optional[Dict[str, Any]] = None  
+    project: Optional[Dict[str, Any]] = None  
+    reporter: Optional[Dict[str, Any]] = None  
+    subtasks: Optional[List[Dict[str, Any]]] = None  
+    tags: Optional[List[Dict[str, Any]]] = None  
+    updater: Optional[Dict[str, Any]] = None  
+    wikifiedDescription: Optional[str] = None
+    
+    @classmethod
+    def get_api_fields(cls) -> str:
+        """Devuelve los campos completos necesarios para análisis detallado"""
+        # Comenzamos con los campos básicos de la clase padre
+        basic_fields = super().get_api_fields()
+        
+        # Agregamos los campos específicos de ExtendedIssue
+        extended_fields = (
+            "created,wikifiedDescription,"
+            "attachments(name),"
+            "links(direction,linkType(name),issues(id,idReadable,summary)),"
+            "parent(issues(id,idReadable,summary)),"
+            "subtasks(issues(id,idReadable,summary,resolved)),"
+            "project(id,name),"
+            "reporter(name,email),"
+            "updater(name,email),"
+            "tags(name)"
+        )
+        
+        return f"{basic_fields},{extended_fields}"
+    
+    @classmethod
+    def from_youtrack_data(cls, issue_data: Dict[str, Any], num_comments: int = -1) -> 'ExtendedIssue':
+        """Crea una ExtendedIssue desde los datos completos de YouTrack"""
+        # Primero creamos la issue básica
+        basic_issue = super().from_youtrack_data(issue_data, num_comments)
+        
+        # Convertimos a ExtendedIssue agregando solo los campos que realmente solicitamos
+        extended = cls(
+            # Campos heredados de Issue
+            id=basic_issue.id,
+            idReadable=basic_issue.idReadable,
+            summary=basic_issue.summary,
+            state=basic_issue.state,
+            assignee=basic_issue.assignee,
+            estimation=basic_issue.estimation,
+            spent=basic_issue.spent,
+            updated=basic_issue.updated,
+            comments=basic_issue.comments,
+            
+            # Campos específicos de ExtendedIssue (solo los que pedimos en API)
+            attachments=issue_data.get("attachments"),
+            created=issue_data.get("created"),
+            links=issue_data.get("links"),
+            parent=issue_data.get("parent"),
+            project=issue_data.get("project"),
+            reporter=issue_data.get("reporter"),
+            subtasks=issue_data.get("subtasks"),
+            tags=issue_data.get("tags"),
+            updater=issue_data.get("updater"),
+            wikifiedDescription=issue_data.get("wikifiedDescription")
+        )
+        
+        return extended
