@@ -67,8 +67,6 @@ poetry.lock
 
 # VS Code
 .vscode/
-.github/
-.serena/
 
 # Local env
 .env
