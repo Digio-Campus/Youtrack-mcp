@@ -189,9 +189,12 @@ class ExtendedIssue(Issue):
         # Subtasks: formatear subtareas
         subtasks_processed = None
         if issue_data.get("subtasks"):
-            subtasks_processed = []
-            for subtask in issue_data["subtasks"]:
-                subtask_issues = subtask.get("issues", [])
+            # subtasks es un diccionario con estructura: {"issues": [...], "$type": "IssueLink"}
+            subtasks_data = issue_data["subtasks"]
+            subtask_issues = subtasks_data.get("issues", [])
+            
+            if subtask_issues:
+                subtasks_processed = []
                 for issue in subtask_issues:
                     resolved_status = " (RESUELTO)" if issue.get("resolved") else ""
                     subtasks_processed.append(f"{issue.get('idReadable', issue.get('id', '?'))}: {issue.get('summary', 'Sin título')}{resolved_status}")
