@@ -104,8 +104,6 @@ def getIssueById(issue_id: str) -> str:
     
     # Log de la issue obtenida
     logger.info(f"Issue obtenida: {issue.id} | {issue.summary}")
-    if issue.comments:
-        logger.info(f"Comentarios encontrados: {len(issue.comments)}")
     
     # Generar el reporte detallado en markdown
     return formatter.format_extended_issue(issue)
