@@ -78,7 +78,9 @@ def getIssueById(issue_id: str) -> str:
     descripción y metadatos para análisis por IA.
 
     Args:
-        issue_id (str): El ID de la issue a analizar (ej: "PROJ-123").
+        issue_id (str): El ID de la issue a analizar. Acepta tanto:
+                       - ID legible (ej: "DEMO-123", "PROJ-456") 
+                       - ID interno (ej: "3-3", "2-15")
 
     Returns:
         str: Información completa de la issue en formato markdown estructurado.
