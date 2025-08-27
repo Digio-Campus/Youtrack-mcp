@@ -6,7 +6,7 @@ from typing import List, Tuple, Optional
 import logging
 
 from .config import YouTrackConfig
-from .models import Board, Issue
+from .models import Board, Issue, ExtendedIssue
 
 logger = logging.getLogger("Youtrack MCP")
 
@@ -73,7 +73,8 @@ class YouTrackClient:
             Tuple[List[Issue], Optional[str]]: Lista de issues y error si existe
         """
         try:
-            fields = "id,idReadable,summary,updated,customFields(name,value(name,presentation)),comments(text,created,author(name))"
+            # Usar los campos optimizados definidos en Issue
+            fields = Issue.get_api_fields()
             url = f"{self.config.base_url}/agiles/{board_id}/sprints/{sprint_id}/issues?fields={fields}"
             
             response = requests.get(url, headers=self.config.headers, timeout=self.config.timeout)
@@ -127,7 +128,7 @@ class YouTrackClient:
         
         return matching_boards[0], None
 
-    def get_issue_by_id(self, issue_id: str) -> Tuple[Optional[Issue], Optional[str]]:
+    def get_issue_by_id(self, issue_id: str) -> Tuple[Optional['ExtendedIssue'], Optional[str]]:
         """
         Obtiene una issue específica por su ID con información detallada completa
         
@@ -135,11 +136,10 @@ class YouTrackClient:
             issue_id: ID de la issue a obtener
             
         Returns:
-            Tuple[Optional[Issue], Optional[str]]: Issue encontrada y error si existe
+            Tuple[Optional[ExtendedIssue], Optional[str]]: Issue extendida encontrada y error si existe
         """
         try:
-            # Campos completos para análisis detallado - incluimos todo lo disponible
-            fields = "id,idReadable,summary,description,created,updated,resolved,reporter(name,email),updater(name,email),customFields(id,name,value,type,$type),comments(text,created,updated,author(name,email)),attachments(id,name,size,url,mimeType),links(direction,linkType(name),issues(id,summary)),tags(name),votes,watchers(hasStar),visibility(type,permittedGroups(name),permittedUsers(name))"
+            fields = ExtendedIssue.get_api_fields()
             url = f"{self.config.base_url}/issues/{issue_id}?fields={fields}"
             
             response = requests.get(url, headers=self.config.headers, timeout=self.config.timeout)
@@ -147,8 +147,8 @@ class YouTrackClient:
             
             issue_data = response.json()
             
-            # Usar todos los comentarios (no limitamos el número)
-            issue = Issue.from_youtrack_data(issue_data, num_comments=-1)  # -1 significa todos
+            # Crear ExtendedIssue con todos los comentarios
+            issue = ExtendedIssue.from_youtrack_data(issue_data, num_comments=-1)
             
             return issue, None
             
