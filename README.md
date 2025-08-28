@@ -327,3 +327,36 @@ Investigando logs del servidor. Parece relacionado con sesiones...
 - ✅ **Comentarios múltiples** con control granular
 - ✅ **Optimizado para IA** con formatos estructurados
 - ✅ **Testing integrado** con Inspector MCP
+
+## Documentación del Proyecto
+
+### Instrucciones para IA y Memorias del Proyecto
+
+Este proyecto incluye documentación especializada para facilitar el desarrollo asistido por IA:
+
+#### `.github/copilot-instructions.md`
+Instrucciones específicas para GitHub Copilot que incluyen:
+- **Descripción del proyecto** y objetivos principales
+- **Integración con Serena MCP** como herramientas de desarrollo
+- **Inicialización correcta** del proyecto con Serena
+- **Gestión de memorias** para recordar decisiones y patrones de código
+- **Herramientas de análisis** semántico de código
+- **Guías de uso** de las herramientas de Serena para diferentes escenarios
+
+#### `.serena/memories/`
+Sistema de memorias del proyecto gestionado por Serena MCP:
+
+- **`main_memory_index.md`** - 📌 Punto de entrada principal para navegar todas las memorias
+- **`project_overview.md`** - 🌟 Overview general del proyecto, tech stack y herramientas
+- **`architecture_class_responsibilities.md`** - 🏗️ Arquitectura detallada y responsabilidades de cada clase
+- **`development_change_guide.md`** - 🔧 Guía práctica para realizar cambios en el código
+- **`style_and_conventions.md`** - 🎨 Convenciones de código y patrones utilizados
+- **`testing_procedures.md`** - 🧪 Procedimientos de testing con Inspector MCP
+
+### Beneficios de la Documentación para IA
+
+- **Onboarding rápido**: Cualquier IA puede entender el proyecto leyendo las memorias
+- **Desarrollo consistente**: Las convenciones y patrones están documentados
+- **Navegación eficiente**: Sistema de memorias interconectadas para acceso directo
+- **Mantenimiento simplificado**: Decisiones arquitectónicas y de diseño preservadas
+- **Colaboración mejorada**: Contexto compartido entre desarrolladores y herramientas de IA
