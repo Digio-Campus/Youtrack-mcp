@@ -1,0 +1,243 @@
+{
+  "createdAt": "2025-08-25T10:50:59.931Z",
+  "updatedAt": "2025-08-28T09:54:22.612Z",
+  "id": "DwAsMqkqnR19AJiA",
+  "name": "Final Project",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 30
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -400,
+        -96
+      ],
+      "id": "4d8aeaad-691d-4c44-8a99-34057fe4acc7",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Check tablero {{ $json.Board }}",
+        "options": {
+          "systemMessage": "=Eres un asistente de control de tableros ágiles en YouTrack. Cada vez que recibas un mensaje como \"Check tablero <NOMBRE>\", debes:\n\n1. Usar el nombre del tablero recibido para pedir al servidor MCP el estado del tablero. El MCP te devolverá la información ya procesada y formateada en Markdown.\n\nUn ejemplo de llamada es:\n<example>\n[\n  {\n    \"Tool_Parameters\": {\n      \"name\": \"Demo project Overview\"\n    }\n  }\n]\n</example>\n\n2. Analiza la información del tablero buscando posibles problemas en los issues. Algunos ejemplos:\n   - Tareas sin estimación.\n   - Tareas sin responsable asignado.\n   - Tareas que tienen mucha desviación entre lo estimado y lo gastado.\n   - Otros posibles indicadores de mal seguimiento (según lo que aparezca en el Markdown).\n\n3. Genera una lista de issues problematicas, en el siguiente formato JSON:\n```json\n[\n  { \"issueName\": \"name\", \"issue-id\": \"id\" },\n  ...\n]\n```\n\n4. Devuelve solo la lista JSON. No des explicaciones ni envíes ningún texto adicional.\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        -16,
+        -96
+      ],
+      "id": "2c9be2e1-62a5-4374-b13e-8c123317690a",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -48,
+        96
+      ],
+      "id": "f4321087-1f43-4376-874c-99894088e7d9",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "64FrWQwI7nxTex2J",
+          "name": "Gemini Api personal"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeTool",
+        "toolName": "getTasksInformation",
+        "toolParameters": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Tool_Parameters', ``, 'json') }}"
+      },
+      "type": "n8n-nodes-mcp.mcpClientTool",
+      "typeVersion": 1,
+      "position": [
+        192,
+        96
+      ],
+      "id": "36719aea-9996-46a0-ad43-2ee21dc8ec83",
+      "name": "MCP Client",
+      "credentials": {
+        "mcpClientApi": {
+          "id": "4Jb99yCeSDyrRYLx",
+          "name": "Youtrack"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const output = $input.first().json.output\nconst jsonMatch =  output.match(/```json\\s*([\\s\\S]*?)\\s*```/);\nlet jsonString = jsonMatch ? jsonMatch[1] : output;\njsonString = jsonString.trim()\nreturn JSON.parse(jsonString);"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        288,
+        -96
+      ],
+      "id": "fccae2fa-6d07-4324-ac25-6be87d55c8fd",
+      "name": "Sacar el JSON de la respuesta"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\n  \"AdminName\": \"javilujan97\",\n  \"Board\": \"Demo project Overview\"\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -208,
+        -96
+      ],
+      "id": "64ab245f-7033-4c3a-9241-dee2d6dad6b1",
+      "name": "Set Admin & Board"
+    },
+    {
+      "parameters": {
+        "url": "https://nominations-nowhere-wheels-blond.trycloudflare.com/webhook/9eabeb48-2f31-48a2-9c5e-d2eaa9db008b",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "issueName",
+              "value": "={{ $json.issueName }}"
+            },
+            {
+              "name": "issue-id",
+              "value": "={{ $json[\"issue-id\"] }}"
+            },
+            {
+              "name": "AdminName",
+              "value": "={{ $('Set Admin & Board').item.json.AdminName }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        496,
+        -96
+      ],
+      "id": "b28f28e2-ed1b-4fb8-823c-5279975528a8",
+      "name": "HTTP Request"
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Set Admin & Board",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Sacar el JSON de la respuesta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MCP Client": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sacar el JSON de la respuesta": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Admin & Board": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "9d5d3f08-45f3-4716-8aae-70df8f8074f7",
+  "triggerCount": 0,
+  "tags": [],
+  "shared": [
+    {
+      "createdAt": "2025-08-25T10:50:59.931Z",
+      "updatedAt": "2025-08-25T10:50:59.931Z",
+      "role": "workflow:owner",
+      "workflowId": "DwAsMqkqnR19AJiA",
+      "projectId": "FCb8ceT7IYx6AkPn",
+      "project": {
+        "createdAt": "2025-08-04T08:05:44.135Z",
+        "updatedAt": "2025-08-04T08:13:46.562Z",
+        "id": "FCb8ceT7IYx6AkPn",
+        "name": "Javier Patricio Luján Romero <javilujan97@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null
+      }
+    }
+  ]
+}

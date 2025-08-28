@@ -1,0 +1,185 @@
+{
+  "createdAt": "2025-08-28T09:47:33.058Z",
+  "updatedAt": "2025-08-28T10:06:02.720Z",
+  "id": "Kjr1epAXV3ShnK8g",
+  "name": "SubWorkflow",
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "path": "9eabeb48-2f31-48a2-9c5e-d2eaa9db008b",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "a91254ee-b24f-4d8f-bc6c-0bbf8f636df6",
+      "name": "Webhook",
+      "webhookId": "9eabeb48-2f31-48a2-9c5e-d2eaa9db008b"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Analiza la issue con \nid : {{ $json.body[\"issue-id\"] }}\nnombre : {{$json.body.issueName}}",
+        "options": {
+          "systemMessage": "=Eres un asistente de control de issues en YouTrack. Cada vez que recibas un mensaje con una issue, debes:\n\n1. Usar el identificador de la issue para pedir al servidor MCP toda la informacion de la misma. El MCP te devolverá la información ya procesada y formateada en Markdown.\n\nUn ejemplo de llamada es:\n<example>\n[\n  {\n    \"Tool_Parameters\": {\n      \"issue_id\": \"3-3\"\n    }\n  }\n]\n</example>\n\n2. Analiza la información de la issue buscando e identificando TODOS los posibles problemas que tenga. Algunos ejemplos:\n   - Sin estimación.\n   - Sin responsable asignado.\n   - Tareas que tienen mucha desviación entre lo estimado y lo gastado.\n   - Otros posibles indicadores de mal seguimiento (según lo que aparezca en el Markdown).\n\n3. Usar otras herramienta MCP para enviar un mensaje que se deben enviar por Slack.\n\n- Si una tarea no tiene responsable, el mensaje debe ir al administrador general, este es \"{{ $json.body.AdminName }}\".\n\n- No repitas información innecesaria. Resume lo importante para que sea fácil de leer por Slack.\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        256,
+        0
+      ],
+      "id": "37845b9a-0069-4f63-b6c3-2e49d4022c89",
+      "name": "AI Agent1"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        208,
+        256
+      ],
+      "id": "51eec6f5-11ba-42d3-8826-130517eb9cd2",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "64FrWQwI7nxTex2J",
+          "name": "Gemini Api personal"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeTool",
+        "toolName": "getIssueById",
+        "toolParameters": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Tool_Parameters', ``, 'json') }}"
+      },
+      "type": "n8n-nodes-mcp.mcpClientTool",
+      "typeVersion": 1,
+      "position": [
+        576,
+        240
+      ],
+      "id": "a46130cf-9283-4cd7-8be8-4aa59d7e8752",
+      "name": "MCP Client1",
+      "credentials": {
+        "mcpClientApi": {
+          "id": "4Jb99yCeSDyrRYLx",
+          "name": "Youtrack"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "user",
+        "user": {
+          "__rl": true,
+          "mode": "username",
+          "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('User', ``, 'string') }}"
+        },
+        "text": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Message_Text', ``, 'string') }}",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slackTool",
+      "typeVersion": 2.3,
+      "position": [
+        448,
+        240
+      ],
+      "id": "0fa02383-2cc6-44ca-a913-986c4a0b9d38",
+      "name": "Send a message in Slack",
+      "webhookId": "2be2996b-b0b4-4ac0-8e46-148d692f207a",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "kZa7Z6B5UkUYnKqC",
+          "name": "Slack account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MCP Client1": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message in Slack": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "d91d1158-7b30-4152-8216-fe201a455f41",
+  "triggerCount": 1,
+  "tags": [],
+  "shared": [
+    {
+      "createdAt": "2025-08-28T09:47:33.058Z",
+      "updatedAt": "2025-08-28T09:47:33.058Z",
+      "role": "workflow:owner",
+      "workflowId": "Kjr1epAXV3ShnK8g",
+      "projectId": "FCb8ceT7IYx6AkPn",
+      "project": {
+        "createdAt": "2025-08-04T08:05:44.135Z",
+        "updatedAt": "2025-08-04T08:13:46.562Z",
+        "id": "FCb8ceT7IYx6AkPn",
+        "name": "Javier Patricio Luján Romero <javilujan97@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null
+      }
+    }
+  ]
+}
